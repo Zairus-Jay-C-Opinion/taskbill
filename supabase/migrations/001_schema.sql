@@ -4,7 +4,7 @@
 -- ─── clients ────────────────────────────────────────────────────────────────
 create table clients (
   id         uuid primary key default gen_random_uuid(),
-  user_id    uuid not null references auth.users(id) on delete cascade,
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
   name       text not null,
   email      text not null,
   created_at timestamptz default now()
@@ -20,7 +20,7 @@ create policy "user owns their clients" on clients
 -- ─── invoices ───────────────────────────────────────────────────────────────
 create table invoices (
   id         uuid primary key default gen_random_uuid(),
-  user_id    uuid not null references auth.users(id) on delete cascade,
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
   client_id  uuid not null references clients(id) on delete cascade,
   status     text not null default 'draft',  -- 'draft' | 'sent' | 'paid'
   due_date   date,
@@ -40,7 +40,7 @@ create policy "user owns their invoices" on invoices
 -- ON DELETE SET NULL means deleting an invoice un-bills its tasks (doesn't delete them).
 create table tasks (
   id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null references auth.users(id) on delete cascade,
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
   client_id   uuid not null references clients(id) on delete cascade,
   invoice_id  uuid references invoices(id) on delete set null,
   title       text not null,
