@@ -1,0 +1,103 @@
+import { supabase } from "./supabaseClient";
+
+// ─── Clients ─────────────────────────────────────────────────────────────────
+
+export async function getClients() {
+  const { data, error } = await supabase
+    .from("clients")
+    .select("*")
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
+export async function createClient({ name, email }) {
+  const { data, error } = await supabase
+    .from("clients")
+    .insert({ name, email })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ─── Tasks ───────────────────────────────────────────────────────────────────
+
+export async function getTasks({ invoiceId = null } = {}) {
+  let query = supabase
+    .from("tasks")
+    .select("*, client:clients(name)")
+    .order("created_at", { ascending: false });
+
+  // Pass invoiceId: null to get unbilled tasks; omit to get all tasks.
+  if (invoiceId === null) {
+    query = query.is("invoice_id", null);
+  } else if (invoiceId !== undefined) {
+    query = query.eq("invoice_id", invoiceId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function createTask({ clientId, title, description, amount }) {
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({ client_id: clientId, title, description, amount })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTaskInvoice(taskId, invoiceId) {
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ invoice_id: invoiceId })
+    .eq("id", taskId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ─── Invoices ─────────────────────────────────────────────────────────────────
+
+export async function getInvoices() {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select(`
+      *,
+      client:clients(name, email),
+      tasks(amount)
+    `)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  // Derive total from associated tasks
+  return data.map((inv) => ({
+    ...inv,
+    total: inv.tasks.reduce((sum, t) => sum + Number(t.amount), 0),
+  }));
+}
+
+export async function createInvoice({ clientId, dueDate }) {
+  const { data, error } = await supabase
+    .from("invoices")
+    .insert({ client_id: clientId, due_date: dueDate || null })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateInvoiceStatus(invoiceId, status) {
+  const { data, error } = await supabase
+    .from("invoices")
+    .update({ status })
+    .eq("id", invoiceId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
