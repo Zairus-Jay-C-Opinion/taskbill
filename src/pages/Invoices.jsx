@@ -38,11 +38,16 @@ export default function Invoices() {
   const [searchClient, setSearchClient] = useState("");
   const [draftingId, setDraftingId] = useState(null);
   const [copiedDraftId, setCopiedDraftId] = useState(null);
-  const [collapsedDrafts, setCollapsedDrafts] = useState(new Set());
 
   const draftsKey = `taskbill-ai-drafts-${profile?.id}`;
+  const collapsedKey = `taskbill-collapsed-drafts-${profile?.id}`;
+
   const [aiDrafts, setAiDrafts] = useState(() => {
     try { return JSON.parse(localStorage.getItem(draftsKey) || "{}"); } catch { return {}; }
+  });
+
+  const [collapsedDrafts, setCollapsedDrafts] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(collapsedKey) || "[]")); } catch { return new Set(); }
   });
 
   // Keep a stable ref to load() so the Realtime callback never goes stale
@@ -81,10 +86,14 @@ export default function Invoices() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Persist AI drafts to localStorage so they survive page refreshes
+  // Persist AI drafts and collapsed state to localStorage so they survive tab switches
   useEffect(() => {
     if (profile?.id) localStorage.setItem(draftsKey, JSON.stringify(aiDrafts));
   }, [aiDrafts, draftsKey, profile?.id]);
+
+  useEffect(() => {
+    if (profile?.id) localStorage.setItem(collapsedKey, JSON.stringify([...collapsedDrafts]));
+  }, [collapsedDrafts, collapsedKey, profile?.id]);
 
   // Polling fallback — every 5 s while any invoice is "sent", in case Realtime isn't enabled yet
   useEffect(() => {
