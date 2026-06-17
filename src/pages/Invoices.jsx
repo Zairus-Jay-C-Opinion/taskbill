@@ -217,7 +217,12 @@ export default function Invoices() {
       const res = await fetch("/api/ai/draft-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientName: inv.client?.name, tasks: inv.tasks }),
+        body: JSON.stringify({
+          clientName: inv.client?.name,
+          tasks: inv.tasks,
+          total: inv.total,
+          currency: sym,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "AI draft failed");
@@ -426,7 +431,7 @@ export default function Invoices() {
               {aiDrafts[inv.id] && (
                 <div className="rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">AI Draft</p>
-                  <p className="text-xs text-[#0D0D0D] leading-relaxed">{aiDrafts[inv.id]}</p>
+                  <p className="text-xs text-[#0D0D0D] leading-relaxed whitespace-pre-wrap">{aiDrafts[inv.id]}</p>
                   <button type="button"
                     onClick={() => navigator.clipboard.writeText(aiDrafts[inv.id])}
                     className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
