@@ -27,7 +27,7 @@ export default function App() {
         <Route path="tasks" element={<PlanGate><Tasks /></PlanGate>} />
         <Route path="invoices" element={<PlanGate><Invoices /></PlanGate>} />
         <Route path="analytics" element={<Analytics />} />
-        <Route path="settings" element={<Settings />} />
+        <Route path="branding" element={<Settings />} />
       </Route>
     </Routes>
   );

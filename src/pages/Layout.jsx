@@ -51,11 +51,11 @@ export default function Layout() {
                   }>
                   Analytics
                 </NavLink>
-                <NavLink to="/settings"
+                <NavLink to="/branding"
                   className={({ isActive }) =>
                     `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
                   }>
-                  Settings
+                  Branding
                 </NavLink>
               </>
             )}

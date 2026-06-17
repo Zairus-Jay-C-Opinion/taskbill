@@ -64,7 +64,7 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Settings</p>
+      <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Branding</p>
       <h2 className="mt-2 text-3xl font-bold tracking-tight text-[#0D0D0D]">Brand</h2>
       <p className="mt-1 text-sm text-[#6B6B6B]">Your logo and color will be used when automated email sending is available.</p>
 
