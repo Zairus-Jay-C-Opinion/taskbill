@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus, savePaymentLink, deleteInvoice } from "../lib/db";
 
 const STATUS_STYLES = {
@@ -22,17 +23,17 @@ export default function Invoices() {
 
   const [form, setForm] = useState({ clientId: "", dueDate: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [advancingId, setAdvancingId] = useState(null); // tracks which invoice is being advanced
+  const [advancingId, setAdvancingId] = useState(null);
 
   const [assigningTo, setAssigningTo] = useState(null);
   const [selected, setSelected] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  useEffect(() => { load(); }, []);
+  // Keep a stable ref to load() so the Realtime callback never goes stale
+  const loadRef = useRef(null);
 
   async function load() {
-    setLoading(true);
     setError("");
     try {
       const [inv, cli, tasks] = await Promise.all([getInvoices(), getClients(), getTasks()]);
@@ -48,6 +49,22 @@ export default function Invoices() {
       setLoading(false);
     }
   }
+
+  loadRef.current = load;
+
+  useEffect(() => {
+    load();
+
+    // Realtime subscription — auto-refreshes when webhook marks invoice as paid
+    const channel = supabase
+      .channel("invoice-updates")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "invoices" }, () => {
+        loadRef.current();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -92,7 +109,6 @@ export default function Invoices() {
     setAdvancingId(invoice.id);
     try {
       if (next === "sent") {
-        // Generate payment link FIRST — only update status if Stripe succeeds
         const res = await fetch("/api/stripe/create-payment-link", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -195,7 +211,7 @@ export default function Invoices() {
             </div>
 
             <div className="border-t border-[#E5E4E0] px-6 py-4 bg-[#F5F4F0] space-y-3">
-              {/* Task list — history for sent/paid, live for draft */}
+              {/* Task list */}
               {inv.tasks?.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Tasks</p>
@@ -226,13 +242,12 @@ export default function Invoices() {
                     {advancingId === inv.id ? "Generating link…" : `Mark as ${NEXT_STATUS[inv.status]}`}
                   </button>
                 )}
-                {inv.status === "draft" && (
-                  <button onClick={() => handleDelete(inv.id)}
-                    disabled={deletingId === inv.id}
-                    className="text-xs text-red-400 hover:text-red-600 underline underline-offset-4 transition-colors disabled:opacity-50 ml-auto">
-                    {deletingId === inv.id ? "Deleting…" : "Delete"}
-                  </button>
-                )}
+                {/* TEMP: delete allowed on all statuses for cleanup */}
+                <button onClick={() => handleDelete(inv.id)}
+                  disabled={deletingId === inv.id}
+                  className="text-xs text-red-400 hover:text-red-600 underline underline-offset-4 transition-colors disabled:opacity-50 ml-auto">
+                  {deletingId === inv.id ? "Deleting…" : "Delete"}
+                </button>
               </div>
 
               {/* Payment link — hidden once paid */}

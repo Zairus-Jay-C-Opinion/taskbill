@@ -72,6 +72,11 @@ export async function createTask({ clientId, title, description, amount, dueDate
   return data;
 }
 
+export async function deleteTask(taskId) {
+  const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  if (error) throw error;
+}
+
 export async function updateTaskInvoice(taskId, invoiceId) {
   const { data, error } = await supabase
     .from("tasks")
