@@ -205,6 +205,13 @@ export default function Invoices() {
       clientsWithPaid.has(client.id)
     );
 
+  // Top form only shows clients that don't already have a draft and aren't
+  // in the amber quick-invoice section — prevents creating duplicate invoices
+  const quickInvoiceClientIds = new Set(unbilledByClient.map(({ client }) => client.id));
+  const clientsForNewInvoice = clients.filter(
+    (c) => !clientsWithDraft.has(c.id) && !quickInvoiceClientIds.has(c.id)
+  );
+
   const displayedInvoices = [...invoices]
     .filter((inv) => !searchClient || inv.client?.name?.toLowerCase().includes(searchClient.toLowerCase()))
     .sort((a, b) => {
@@ -238,11 +245,11 @@ export default function Invoices() {
       )}
 
       {/* ── Create invoice ── */}
-      {clients.length > 0 && (
+      {clientsForNewInvoice.length > 0 && (
         <form onSubmit={handleCreate} className="mt-6 rounded-2xl border border-[#E5E4E0] bg-white p-6 space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">New invoice</p>
           <select value={form.clientId} onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))} className={inputCls}>
-            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {clientsForNewInvoice.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <div>
             <label className="block text-xs text-[#6B6B6B] mb-1.5">Due date (optional)</label>
@@ -270,6 +277,7 @@ export default function Invoices() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => handleQuickInvoice(client.id, tasks)}
                 disabled={submitting}
                 className="shrink-0 ml-4 rounded-xl bg-[#0D0D0D] px-4 py-2 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity"
