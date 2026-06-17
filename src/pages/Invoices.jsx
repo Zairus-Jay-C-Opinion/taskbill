@@ -455,7 +455,7 @@ export default function Invoices() {
                   <button onClick={() => handleAdvanceStatus(inv)}
                     disabled={advancingId === inv.id}
                     className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors disabled:opacity-50">
-                    {advancingId === inv.id ? "Generating link…" : `Mark as ${NEXT_STATUS[inv.status]}`}
+                    {advancingId === inv.id ? "Generating link…" : "Get payment link"}
                   </button>
                 )}
                 {/* TEMP: delete allowed on all statuses for cleanup */}
