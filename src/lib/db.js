@@ -11,6 +11,32 @@ export async function getProfile() {
   return data;
 }
 
+export async function getTaskCountThisMonth() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { count, error } = await supabase
+    .from("tasks")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", startOfMonth);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function getInvoiceCountThisWeek() {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday
+  const diff = day === 0 ? 6 : day - 1; // days since Monday
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diff);
+  monday.setHours(0, 0, 0, 0);
+  const { count, error } = await supabase
+    .from("invoices")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", monday.toISOString());
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function saveCurrency(userId, currency) {
   const { data, error } = await supabase
     .from("profiles")

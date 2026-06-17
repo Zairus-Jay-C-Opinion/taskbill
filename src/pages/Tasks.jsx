@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getClients, getTasks, createTask, createClient, deleteTask } from "../lib/db";
+import { getClients, getTasks, createTask, createClient, deleteTask, getTaskCountThisMonth } from "../lib/db";
 import { useAuth } from "../auth/AuthProvider";
 import { currencySymbol } from "../lib/currency";
 
@@ -115,8 +115,15 @@ export default function Tasks() {
 
   async function handleAddTask(e) {
     e.preventDefault();
-    setSubmitting(true);
     setError("");
+    if (profile?.plan === "free") {
+      const count = await getTaskCountThisMonth();
+      if (count >= 20) {
+        setError("Free plan is limited to 20 tasks per month. Upgrade to Pro for unlimited tasks.");
+        return;
+      }
+    }
+    setSubmitting(true);
     try {
       await createTask({
         clientId: form.clientId,

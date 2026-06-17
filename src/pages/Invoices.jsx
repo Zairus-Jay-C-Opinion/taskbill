@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus, savePaymentLink, deleteInvoice } from "../lib/db";
+import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus, savePaymentLink, deleteInvoice, getInvoiceCountThisWeek } from "../lib/db";
 import { useAuth } from "../auth/AuthProvider";
 import { currencySymbol } from "../lib/currency";
 
@@ -36,6 +36,8 @@ export default function Invoices() {
   const [deletingId, setDeletingId] = useState(null);
   const [sort, setSort] = useState("latest");
   const [searchClient, setSearchClient] = useState("");
+  const [draftingId, setDraftingId] = useState(null);
+  const [aiDrafts, setAiDrafts] = useState({});
 
   // Keep a stable ref to load() so the Realtime callback never goes stale
   const loadRef = useRef(null);
@@ -88,6 +90,13 @@ export default function Invoices() {
       const clientName = clients.find((c) => c.id === form.clientId)?.name ?? "this client";
       setError(`No new unbilled tasks for ${clientName}. Add new tasks before creating an invoice.`);
       return;
+    }
+    if (profile?.plan === "free") {
+      const count = await getInvoiceCountThisWeek();
+      if (count >= 5) {
+        setError("Free plan is limited to 5 invoices per week. Upgrade to Pro for unlimited invoices.");
+        return;
+      }
     }
     setSubmitting(true);
     setError("");
@@ -182,6 +191,13 @@ export default function Invoices() {
   const clientTasksFor = (clientId) => unbilledTasks.filter((t) => t.client_id === clientId);
 
   async function handleQuickInvoice(clientId, tasks) {
+    if (profile?.plan === "free") {
+      const count = await getInvoiceCountThisWeek();
+      if (count >= 5) {
+        setError("Free plan is limited to 5 invoices per week. Upgrade to Pro for unlimited invoices.");
+        return;
+      }
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -192,6 +208,24 @@ export default function Invoices() {
       setError(e.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleAiDraft(inv) {
+    setDraftingId(inv.id);
+    try {
+      const res = await fetch("/api/ai/draft-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientName: inv.client?.name, tasks: inv.tasks }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "AI draft failed");
+      setAiDrafts((prev) => ({ ...prev, [inv.id]: data.draft }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDraftingId(null);
     }
   }
 
@@ -359,11 +393,18 @@ export default function Invoices() {
               )}
 
               {/* Actions */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 {clientTasksFor(inv.client_id).length > 0 && inv.status === "draft" && (
                   <button onClick={() => { setAssigningTo(inv.id); setSelected([]); }}
                     className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
                     Assign tasks ({clientTasksFor(inv.client_id).length} unbilled)
+                  </button>
+                )}
+                {inv.status === "draft" && inv.tasks?.length > 0 && profile?.plan !== "free" && (
+                  <button type="button" onClick={() => handleAiDraft(inv)}
+                    disabled={draftingId === inv.id}
+                    className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors disabled:opacity-50">
+                    {draftingId === inv.id ? "Drafting…" : "✨ Draft with AI"}
                   </button>
                 )}
                 {NEXT_STATUS[inv.status] && (
@@ -380,6 +421,19 @@ export default function Invoices() {
                   {deletingId === inv.id ? "Deleting…" : "Delete"}
                 </button>
               </div>
+
+              {/* AI draft result */}
+              {aiDrafts[inv.id] && (
+                <div className="rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">AI Draft</p>
+                  <p className="text-xs text-[#0D0D0D] leading-relaxed">{aiDrafts[inv.id]}</p>
+                  <button type="button"
+                    onClick={() => navigator.clipboard.writeText(aiDrafts[inv.id])}
+                    className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
+                    Copy
+                  </button>
+                </div>
+              )}
 
               {/* Payment link — hidden once paid */}
               {inv.payment_link && inv.status !== "paid" && (
