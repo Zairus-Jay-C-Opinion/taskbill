@@ -22,6 +22,7 @@ export default function Invoices() {
 
   const [form, setForm] = useState({ clientId: "", dueDate: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [advancingId, setAdvancingId] = useState(null); // tracks which invoice is being advanced
 
   const [assigningTo, setAssigningTo] = useState(null);
   const [selected, setSelected] = useState([]);
@@ -79,8 +80,15 @@ export default function Invoices() {
   async function handleAdvanceStatus(invoice) {
     const next = NEXT_STATUS[invoice.status];
     if (!next) return;
+
+    // Block sending a ₱0 invoice
+    if (next === "sent" && invoice.total === 0) {
+      setError("Assign at least one task before marking this invoice as sent.");
+      return;
+    }
+
     setError("");
-    setSubmitting(true);
+    setAdvancingId(invoice.id);
     try {
       await updateInvoiceStatus(invoice.id, next);
 
@@ -108,7 +116,7 @@ export default function Invoices() {
     } catch (e) {
       setError(e.message);
     } finally {
-      setSubmitting(false);
+      setAdvancingId(null);
     }
   }
 
@@ -178,9 +186,9 @@ export default function Invoices() {
                 )}
                 {NEXT_STATUS[inv.status] && (
                   <button onClick={() => handleAdvanceStatus(inv)}
-                    disabled={submitting}
+                    disabled={advancingId === inv.id}
                     className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors disabled:opacity-50">
-                    {submitting ? "Generating link…" : `Mark as ${NEXT_STATUS[inv.status]}`}
+                    {advancingId === inv.id ? "Generating link…" : `Mark as ${NEXT_STATUS[inv.status]}`}
                   </button>
                 )}
               </div>
