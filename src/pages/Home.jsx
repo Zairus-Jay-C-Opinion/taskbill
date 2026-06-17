@@ -245,7 +245,7 @@ export default function Home() {
 
       {/* ── About ── */}
       <section id="about" className="bg-[#F5F4F0] py-28 px-6">
-        <div ref={aboutRef} className="mx-auto max-w-3xl" style={{ opacity: 0, transform: "translateY(24px)" }}>
+        <div ref={aboutRef} className="mx-auto max-w-4xl" style={{ opacity: 0, transform: "translateY(24px)" }}>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">About</p>
           <h2 className="mt-3 text-5xl font-bold tracking-tight text-[#0D0D0D]">
             Built for freelancers who mean business.
