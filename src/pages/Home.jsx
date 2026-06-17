@@ -8,9 +8,16 @@ function useReveal() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    el.style.transition = "opacity 0.7s ease, transform 0.7s ease";
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { el.classList.add("fade-up"); observer.disconnect(); } },
-      { threshold: 0.15 }
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0)";
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -57,7 +64,7 @@ const ABOUT_TABS = [
 function AboutTabs() {
   const [active, setActive] = useState(0);
   return (
-    <div className="mt-10">
+    <div className="mt-10 text-left">
       <div className="flex gap-1 border-b border-[#E5E4E0]">
         {ABOUT_TABS.map((tab, i) => (
           <button key={tab.label} onClick={() => setActive(i)}
@@ -67,7 +74,7 @@ function AboutTabs() {
           </button>
         ))}
       </div>
-      <p key={active} className="mt-8 text-lg text-[#6B6B6B] leading-relaxed fade-up">
+      <p key={active} className="mt-8 text-lg text-[#6B6B6B] leading-relaxed fade-up text-left">
         {ABOUT_TABS[active].body}
       </p>
     </div>
@@ -237,13 +244,13 @@ export default function Home() {
       </section>
 
       {/* ── About ── */}
-      <section id="about" className="bg-[#F5F4F0] py-28 px-6">
-        <div ref={aboutRef} className="mx-auto max-w-3xl opacity-0">
+      <section id="about" className="bg-[#F5F4F0] py-24 px-6">
+        <div ref={aboutRef} className="mx-auto max-w-4xl text-center" style={{ opacity: 0, transform: "translateY(24px)" }}>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">About</p>
           <h2 className="mt-3 text-5xl font-bold tracking-tight text-[#0D0D0D]">
             Built for freelancers who mean business.
           </h2>
-          <p className="mt-5 text-xl text-[#6B6B6B] leading-relaxed">
+          <p className="mt-5 text-xl text-[#6B6B6B] leading-relaxed max-w-2xl mx-auto">
             TaskBill brings together task tracking and invoicing into a single, distraction-free workspace.
             No spreadsheets, no manual calculations — just clear records of your work and a fast path to getting paid.
           </p>
@@ -253,7 +260,7 @@ export default function Home() {
 
       {/* ── Plans ── */}
       <section id="plans" className="bg-white py-24 px-6 border-t border-[#E5E4E0]">
-        <div ref={plansRef} className="mx-auto max-w-4xl opacity-0">
+        <div ref={plansRef} className="mx-auto max-w-4xl text-center" style={{ opacity: 0, transform: "translateY(24px)" }}>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Pricing</p>
           <h2 className="mt-3 text-4xl font-bold tracking-tight text-[#0D0D0D]">Simple, transparent plans.</h2>
           <p className="mt-3 text-[#6B6B6B]">Start free. Upgrade when you're ready.</p>
@@ -268,6 +275,8 @@ export default function Home() {
               Pick a plan below to unlock Tasks &amp; Invoices.
             </p>
           )}
+
+
 
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {PLANS.map((plan) => {
