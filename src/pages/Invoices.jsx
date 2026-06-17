@@ -7,7 +7,7 @@ const STATUS_STYLES = {
   paid:  "bg-emerald-100 text-emerald-700",
 };
 
-const NEXT_STATUS = { draft: "sent", sent: "paid" };
+const NEXT_STATUS = { draft: "sent" }; // sent → paid is webhook-only
 
 const inputCls = "w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors";
 const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity";
@@ -201,7 +201,10 @@ export default function Invoices() {
                   <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Tasks</p>
                   {inv.tasks.map((t) => (
                     <div key={t.id} className="flex justify-between text-xs text-[#0D0D0D]">
-                      <span>{t.title}</span>
+                      <span>
+                        {t.title}
+                        {t.due_date && <span className="ml-2 text-[#6B6B6B]">· due {t.due_date}</span>}
+                      </span>
                       <span className="text-[#6B6B6B]">₱{Number(t.amount).toFixed(2)}</span>
                     </div>
                   ))}
@@ -223,15 +226,17 @@ export default function Invoices() {
                     {advancingId === inv.id ? "Generating link…" : `Mark as ${NEXT_STATUS[inv.status]}`}
                   </button>
                 )}
-                <button onClick={() => handleDelete(inv.id)}
-                  disabled={deletingId === inv.id}
-                  className="text-xs text-red-400 hover:text-red-600 underline underline-offset-4 transition-colors disabled:opacity-50 ml-auto">
-                  {deletingId === inv.id ? "Deleting…" : "Delete"}
-                </button>
+                {inv.status === "draft" && (
+                  <button onClick={() => handleDelete(inv.id)}
+                    disabled={deletingId === inv.id}
+                    className="text-xs text-red-400 hover:text-red-600 underline underline-offset-4 transition-colors disabled:opacity-50 ml-auto">
+                    {deletingId === inv.id ? "Deleting…" : "Delete"}
+                  </button>
+                )}
               </div>
 
-              {/* Payment link */}
-              {inv.payment_link && (
+              {/* Payment link — hidden once paid */}
+              {inv.payment_link && inv.status !== "paid" && (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[#6B6B6B] truncate max-w-xs">{inv.payment_link}</span>
                   <button

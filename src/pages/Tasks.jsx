@@ -11,7 +11,7 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [form, setForm] = useState({ clientId: "", title: "", description: "", amount: "" });
+  const [form, setForm] = useState({ clientId: "", title: "", description: "", amount: "", dueDate: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const [showClientForm, setShowClientForm] = useState(false);
@@ -63,9 +63,10 @@ export default function Tasks() {
         title: form.title,
         description: form.description,
         amount: parseFloat(form.amount) || 0,
+        dueDate: form.dueDate,
       });
       await load();
-      setForm((f) => ({ ...f, title: "", description: "", amount: "" }));
+      setForm((f) => ({ ...f, title: "", description: "", amount: "", dueDate: "" }));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -114,6 +115,11 @@ export default function Tasks() {
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className={inputCls} />
           <input required type="number" min="0" step="0.01" placeholder="Amount (₱)" value={form.amount}
             onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className={inputCls} />
+          <div>
+            <label className="block text-xs text-[#6B6B6B] mb-1.5">Due date (optional)</label>
+            <input type="date" value={form.dueDate}
+              onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))} className={inputCls} />
+          </div>
           <button type="submit" disabled={submitting} className={btnPrimary}>
             {submitting ? "Adding…" : "Add task"}
           </button>
@@ -132,6 +138,7 @@ export default function Tasks() {
               <p className="text-sm font-semibold text-[#0D0D0D]">{task.title}</p>
               {task.description && <p className="mt-0.5 text-xs text-[#6B6B6B]">{task.description}</p>}
               <p className="mt-1.5 text-xs text-[#6B6B6B]">{task.client?.name}</p>
+              {task.due_date && <p className="mt-0.5 text-xs text-[#6B6B6B]">Due {task.due_date}</p>}
             </div>
             <span className="text-sm font-bold text-[#0D0D0D]">₱{Number(task.amount).toFixed(2)}</span>
           </div>

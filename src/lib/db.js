@@ -62,10 +62,10 @@ export async function getTasks({ invoiceId = null } = {}) {
   return data;
 }
 
-export async function createTask({ clientId, title, description, amount }) {
+export async function createTask({ clientId, title, description, amount, dueDate }) {
   const { data, error } = await supabase
     .from("tasks")
-    .insert({ client_id: clientId, title, description, amount })
+    .insert({ client_id: clientId, title, description, amount, due_date: dueDate || null })
     .select()
     .single();
   if (error) throw error;
@@ -91,7 +91,7 @@ export async function getInvoices() {
     .select(`
       *,
       client:clients(name, email),
-      tasks(id, title, amount)
+      tasks(id, title, amount, due_date)
     `)
     .order("created_at", { ascending: false });
   if (error) throw error;
