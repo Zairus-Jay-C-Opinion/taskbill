@@ -223,6 +223,7 @@ export default function Invoices() {
           tasks: inv.tasks,
           total: inv.total,
           currency: sym,
+          paymentLink: inv.payment_link ?? null,
         }),
       });
       const data = await res.json();
@@ -406,11 +407,11 @@ export default function Invoices() {
                     Assign tasks ({clientTasksFor(inv.client_id).length} unbilled)
                   </button>
                 )}
-                {inv.status === "draft" && inv.tasks?.length > 0 && profile?.plan !== "free" && (
+                {inv.tasks?.length > 0 && profile?.plan !== "free" && (
                   <button type="button" onClick={() => handleAiDraft(inv)}
                     disabled={draftingId === inv.id}
                     className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors disabled:opacity-50">
-                    {draftingId === inv.id ? "Drafting…" : "✨ Draft with AI"}
+                    {draftingId === inv.id ? "Drafting…" : "Draft with AI"}
                   </button>
                 )}
                 {NEXT_STATUS[inv.status] && (
