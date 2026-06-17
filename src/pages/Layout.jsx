@@ -15,7 +15,7 @@ export default function Layout() {
     <div className="min-h-screen bg-[#F5F4F0]">
       <header className="flex items-center justify-between border-b border-[#E5E4E0] bg-white px-6 py-5">
         <div className="flex items-center gap-8">
-          <img src="/logo.png" alt="TaskBill" className="h-8 w-auto" style={{ mixBlendMode: "multiply" }} />
+          <img src="/logo.png" alt="TaskBill" className="h-8 w-auto" />
           <nav className="flex gap-6">
             {NAV_ITEMS.map(({ to, label, end }) => (
               <NavLink

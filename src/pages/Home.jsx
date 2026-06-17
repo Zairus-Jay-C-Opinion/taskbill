@@ -18,6 +18,49 @@ function useReveal() {
   return ref;
 }
 
+const ABOUT_TABS = [
+  {
+    label: "Track tasks",
+    body: "Log work by client with a title, description, and amount. Every billable hour and deliverable stays organised — nothing slips through the cracks.",
+  },
+  {
+    label: "Invoice clients",
+    body: "Group unbilled tasks into an invoice and send it in seconds. Totals are calculated automatically so you never do the math manually again.",
+  },
+  {
+    label: "Stay in control",
+    body: "Monitor draft, sent, and paid invoices at a glance. Your data is isolated per account and protected by row-level security — no one else can see it.",
+  },
+];
+
+function AboutTabs() {
+  const [active, setActive] = useState(0);
+
+  return (
+    <div className="mt-10">
+      <div className="flex gap-1 border-b border-[#E5E4E0]">
+        {ABOUT_TABS.map((tab, i) => (
+          <button
+            key={tab.label}
+            onClick={() => setActive(i)}
+            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+              active === i ? "text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"
+            }`}
+          >
+            {tab.label}
+            {active === i && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0D0D0D] rounded-full" />
+            )}
+          </button>
+        ))}
+      </div>
+      <p key={active} className="mt-6 text-[#6B6B6B] leading-relaxed fade-up">
+        {ABOUT_TABS[active].body}
+      </p>
+    </div>
+  );
+}
+
 const PLANS = [
   {
     name: "Free",
@@ -150,21 +193,7 @@ export default function Home() {
             TaskBill brings together task tracking and invoicing into a single, distraction-free workspace.
             No spreadsheets, no manual calculations — just clear records of your work and a fast path to getting paid.
           </p>
-          <div className="mt-10 divide-y divide-[#E5E4E0]">
-            {[
-              ["01", "Track every task", "Log work by client with a title, description, and amount. Nothing slips through the cracks."],
-              ["02", "Invoice in seconds", "Group unbilled tasks into an invoice and send it — totals are calculated automatically."],
-              ["03", "Stay in control", "Monitor draft, sent, and paid invoices at a glance. Your data, isolated and secure."],
-            ].map(([num, title, body]) => (
-              <div key={num} className="flex gap-8 py-7">
-                <span className="text-xs font-semibold text-[#6B6B6B] w-6 shrink-0 pt-0.5">{num}</span>
-                <div>
-                  <p className="text-base font-bold text-[#0D0D0D]">{title}</p>
-                  <p className="mt-1.5 text-sm text-[#6B6B6B] leading-relaxed">{body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <AboutTabs />
         </div>
       </section>
 
