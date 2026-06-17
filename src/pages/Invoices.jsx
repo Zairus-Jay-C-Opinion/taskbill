@@ -38,6 +38,7 @@ export default function Invoices() {
   const [searchClient, setSearchClient] = useState("");
   const [draftingId, setDraftingId] = useState(null);
   const [aiDrafts, setAiDrafts] = useState({});
+  const [copiedDraftId, setCopiedDraftId] = useState(null);
 
   // Keep a stable ref to load() so the Realtime callback never goes stale
   const loadRef = useRef(null);
@@ -433,9 +434,13 @@ export default function Invoices() {
                   <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">AI Draft</p>
                   <p className="text-xs text-[#0D0D0D] leading-relaxed whitespace-pre-wrap">{aiDrafts[inv.id]}</p>
                   <button type="button"
-                    onClick={() => navigator.clipboard.writeText(aiDrafts[inv.id])}
+                    onClick={() => {
+                      navigator.clipboard.writeText(aiDrafts[inv.id]);
+                      setCopiedDraftId(inv.id);
+                      setTimeout(() => setCopiedDraftId(null), 2000);
+                    }}
                     className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
-                    Copy
+                    {copiedDraftId === inv.id ? "Copied!" : "Copy"}
                   </button>
                 </div>
               )}

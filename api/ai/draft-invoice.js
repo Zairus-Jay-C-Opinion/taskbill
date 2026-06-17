@@ -30,7 +30,7 @@ Write a complete, professional invoice email that includes:
 2. A greeting addressed to ${clientName}
 3. A paragraph summarizing the specific work completed, referencing the actual service names above
 4. A clear statement of the total amount due${totalStr ? ` (${totalStr})` : ""} and a polite but confident payment request
-5. A brief note that a payment link is included with the invoice
+5. A brief note that a payment link will be sent to them shortly for easy online payment
 6. A professional closing
 
 Keep the tone warm but business-appropriate. 3–4 short paragraphs. Do not use placeholder text like [Your Name] — end with "Best regards," on its own line.`;
