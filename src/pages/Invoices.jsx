@@ -37,9 +37,13 @@ export default function Invoices() {
   const [sort, setSort] = useState("latest");
   const [searchClient, setSearchClient] = useState("");
   const [draftingId, setDraftingId] = useState(null);
-  const [aiDrafts, setAiDrafts] = useState({});
   const [copiedDraftId, setCopiedDraftId] = useState(null);
   const [collapsedDrafts, setCollapsedDrafts] = useState(new Set());
+
+  const draftsKey = `taskbill-ai-drafts-${profile?.id}`;
+  const [aiDrafts, setAiDrafts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(draftsKey) || "{}"); } catch { return {}; }
+  });
 
   // Keep a stable ref to load() so the Realtime callback never goes stale
   const loadRef = useRef(null);
@@ -76,6 +80,11 @@ export default function Invoices() {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // Persist AI drafts to localStorage so they survive page refreshes
+  useEffect(() => {
+    if (profile?.id) localStorage.setItem(draftsKey, JSON.stringify(aiDrafts));
+  }, [aiDrafts, draftsKey, profile?.id]);
 
   // Polling fallback — every 5 s while any invoice is "sent", in case Realtime isn't enabled yet
   useEffect(() => {
