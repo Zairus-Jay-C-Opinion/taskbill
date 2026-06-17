@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus } from "../lib/db";
+import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus, savePaymentLink } from "../lib/db";
 
 const STATUS_STYLES = {
   draft: "bg-stone-100 text-stone-600",
@@ -79,12 +79,38 @@ export default function Invoices() {
   async function handleAdvanceStatus(invoice) {
     const next = NEXT_STATUS[invoice.status];
     if (!next) return;
+    setError("");
     try {
       await updateInvoiceStatus(invoice.id, next);
+
+      // When marking as sent, generate a Stripe payment link
+      if (next === "sent" && invoice.total > 0) {
+        const res = await fetch("/api/stripe/create-payment-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            invoiceId: invoice.id,
+            amount: invoice.total,
+            clientName: invoice.client?.name,
+            description: `Invoice for ${invoice.client?.name}`,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to create payment link");
+        await savePaymentLink(invoice.id, {
+          paymentLink: data.url,
+          paymentLinkId: data.paymentLinkId,
+        });
+      }
+
       await load();
     } catch (e) {
       setError(e.message);
     }
+  }
+
+  async function handleCopyLink(url) {
+    await navigator.clipboard.writeText(url);
   }
 
   const clientTasksFor = (clientId) => unbilledTasks.filter((t) => t.client_id === clientId);
@@ -139,18 +165,34 @@ export default function Invoices() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 border-t border-[#E5E4E0] px-6 py-3 bg-[#F5F4F0]">
-              {clientTasksFor(inv.client_id).length > 0 && inv.status === "draft" && (
-                <button onClick={() => { setAssigningTo(inv.id); setSelected([]); }}
-                  className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
-                  Assign tasks ({clientTasksFor(inv.client_id).length} unbilled)
-                </button>
-              )}
-              {NEXT_STATUS[inv.status] && (
-                <button onClick={() => handleAdvanceStatus(inv)}
-                  className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
-                  Mark as {NEXT_STATUS[inv.status]}
-                </button>
+            <div className="border-t border-[#E5E4E0] px-6 py-3 bg-[#F5F4F0] space-y-2">
+              <div className="flex items-center gap-4">
+                {clientTasksFor(inv.client_id).length > 0 && inv.status === "draft" && (
+                  <button onClick={() => { setAssigningTo(inv.id); setSelected([]); }}
+                    className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
+                    Assign tasks ({clientTasksFor(inv.client_id).length} unbilled)
+                  </button>
+                )}
+                {NEXT_STATUS[inv.status] && (
+                  <button onClick={() => handleAdvanceStatus(inv)}
+                    disabled={submitting}
+                    className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors disabled:opacity-50">
+                    {submitting ? "Generating link…" : `Mark as ${NEXT_STATUS[inv.status]}`}
+                  </button>
+                )}
+              </div>
+
+              {/* Payment link — shown once invoice is sent */}
+              {inv.payment_link && (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-[#6B6B6B] truncate max-w-xs">{inv.payment_link}</span>
+                  <button
+                    onClick={() => handleCopyLink(inv.payment_link)}
+                    className="shrink-0 rounded-lg border border-[#E5E4E0] bg-white px-3 py-1 text-xs font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors"
+                  >
+                    Copy link
+                  </button>
+                </div>
               )}
             </div>
 

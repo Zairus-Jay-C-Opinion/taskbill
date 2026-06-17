@@ -112,6 +112,17 @@ export async function createInvoice({ clientId, dueDate }) {
   return data;
 }
 
+export async function savePaymentLink(invoiceId, { paymentLink, paymentLinkId }) {
+  const { data, error } = await supabase
+    .from("invoices")
+    .update({ payment_link: paymentLink, payment_link_id: paymentLinkId })
+    .eq("id", invoiceId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function updateInvoiceStatus(invoiceId, status) {
   const { data, error } = await supabase
     .from("invoices")
