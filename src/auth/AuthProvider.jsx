@@ -1,49 +1,57 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { getProfile } from "../lib/db";
 
 const AuthContext = createContext(null);
 
-/**
- * Holds the current Supabase auth session and keeps it in sync.
- * `loading` is true until the initial session check resolves, so guarded
- * routes don't flash the login page before we know who's signed in.
- */
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = useCallback(async () => {
+    try {
+      const p = await getProfile();
+      setProfile(p);
+    } catch {
+      setProfile(null);
+    }
+  }, []);
+
   useEffect(() => {
-    // Grab the session that already exists (e.g. after a page refresh).
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
+      if (data.session) await fetchProfile();
       setLoading(false);
     });
 
-    // Then subscribe to future changes (sign in, sign out, token refresh).
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
+      if (event === "SIGNED_IN" && newSession) {
+        await fetchProfile();
+      }
+      if (event === "SIGNED_OUT") {
+        setProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fetchProfile]);
 
   const value = {
     session,
     user: session?.user ?? null,
+    profile,
     loading,
+    refreshProfile: fetchProfile,
     signOut: () => supabase.auth.signOut(),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/** Read auth state from any component inside <AuthProvider>. */
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (ctx === null) {
-    throw new Error("useAuth must be used within an <AuthProvider>");
-  }
+  if (ctx === null) throw new Error("useAuth must be used within an <AuthProvider>");
   return ctx;
 }

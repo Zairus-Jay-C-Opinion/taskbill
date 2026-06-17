@@ -1,5 +1,26 @@
 import { supabase } from "./supabaseClient";
 
+// ─── Profile ─────────────────────────────────────────────────────────────────
+
+export async function getProfile() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertProfile({ id, username }) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert({ id, username, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 // ─── Clients ─────────────────────────────────────────────────────────────────
 
 export async function getClients() {

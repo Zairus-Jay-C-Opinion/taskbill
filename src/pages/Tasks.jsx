@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { getClients, getTasks, createTask, createClient } from "../lib/db";
 
-const STATUS_COLORS = {
-  draft: "bg-slate-100 text-slate-600",
-  sent: "bg-blue-100 text-blue-700",
-  paid: "bg-green-100 text-green-700",
-};
+const inputCls = "w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors";
+const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity";
+const btnGhost = "rounded-xl border border-[#E5E4E0] px-5 py-2.5 text-sm font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors";
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -13,17 +11,13 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Create-task form
   const [form, setForm] = useState({ clientId: "", title: "", description: "", amount: "" });
   const [submitting, setSubmitting] = useState(false);
 
-  // New-client inline form
   const [showClientForm, setShowClientForm] = useState(false);
   const [clientForm, setClientForm] = useState({ name: "", email: "" });
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
@@ -64,13 +58,12 @@ export default function Tasks() {
     setSubmitting(true);
     setError("");
     try {
-      const task = await createTask({
+      await createTask({
         clientId: form.clientId,
         title: form.title,
         description: form.description,
         amount: parseFloat(form.amount) || 0,
       });
-      // Reload to get joined client name
       await load();
       setForm((f) => ({ ...f, title: "", description: "", amount: "" }));
     } catch (e) {
@@ -82,82 +75,46 @@ export default function Tasks() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <h2 className="text-xl font-semibold text-slate-900">Tasks</h2>
-      <p className="mt-1 text-sm text-slate-500">Unbilled tasks — add them to an invoice when ready.</p>
+      <h2 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">Tasks</h2>
+      <p className="mt-1 text-sm text-[#6B6B6B]">Unbilled tasks — add them to an invoice when ready.</p>
 
-      {error && <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-600">{error}</p>
+      )}
 
-      {/* ── Add client inline ── */}
+      {/* ── Add client ── */}
       {showClientForm ? (
-        <form onSubmit={handleAddClient} className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-          <p className="text-sm font-medium text-slate-700">New client</p>
-          <input
-            required
-            placeholder="Name"
-            value={clientForm.name}
-            onChange={(e) => setClientForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
-          />
-          <input
-            required
-            type="email"
-            placeholder="Email"
-            value={clientForm.email}
-            onChange={(e) => setClientForm((f) => ({ ...f, email: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
-          />
-          <div className="flex gap-2">
-            <button type="submit" disabled={submitting} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
-              Save client
-            </button>
-            <button type="button" onClick={() => { setShowClientForm(false); setClientForm({ name: "", email: "" }); }} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
-              Cancel
-            </button>
+        <form onSubmit={handleAddClient} className="mt-6 rounded-2xl border border-[#E5E4E0] bg-white p-6 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">New client</p>
+          <input required placeholder="Name" value={clientForm.name}
+            onChange={(e) => setClientForm((f) => ({ ...f, name: e.target.value }))} className={inputCls} />
+          <input required type="email" placeholder="Email" value={clientForm.email}
+            onChange={(e) => setClientForm((f) => ({ ...f, email: e.target.value }))} className={inputCls} />
+          <div className="flex gap-2 pt-1">
+            <button type="submit" disabled={submitting} className={btnPrimary}>Save client</button>
+            <button type="button" onClick={() => { setShowClientForm(false); setClientForm({ name: "", email: "" }); }} className={btnGhost}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button onClick={() => setShowClientForm(true)} className="mt-4 text-sm text-slate-500 hover:text-slate-900 underline underline-offset-2">
+        <button onClick={() => setShowClientForm(true)} className="mt-5 text-sm text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
           + Add a client first
         </button>
       )}
 
-      {/* ── Add task form ── */}
+      {/* ── Add task ── */}
       {clients.length > 0 && (
-        <form onSubmit={handleAddTask} className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-          <p className="text-sm font-medium text-slate-700">New task</p>
-          <select
-            value={form.clientId}
-            onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
-          >
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
+        <form onSubmit={handleAddTask} className="mt-6 rounded-2xl border border-[#E5E4E0] bg-white p-6 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">New task</p>
+          <select value={form.clientId} onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))} className={inputCls}>
+            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <input
-            required
-            placeholder="Title"
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
-          />
-          <input
-            placeholder="Description (optional)"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
-          />
-          <input
-            required
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Amount (₱)"
-            value={form.amount}
-            onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
-          />
-          <button type="submit" disabled={submitting} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
+          <input required placeholder="Title" value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className={inputCls} />
+          <input placeholder="Description (optional)" value={form.description}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className={inputCls} />
+          <input required type="number" min="0" step="0.01" placeholder="Amount (₱)" value={form.amount}
+            onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className={inputCls} />
+          <button type="submit" disabled={submitting} className={btnPrimary}>
             {submitting ? "Adding…" : "Add task"}
           </button>
         </form>
@@ -165,18 +122,18 @@ export default function Tasks() {
 
       {/* ── Task list ── */}
       <div className="mt-8 space-y-3">
-        {loading && <p className="text-sm text-slate-400">Loading…</p>}
+        {loading && <p className="text-sm text-[#6B6B6B]">Loading…</p>}
         {!loading && tasks.length === 0 && (
-          <p className="text-sm text-slate-400">No unbilled tasks yet.</p>
+          <p className="text-sm text-[#6B6B6B]">No unbilled tasks yet.</p>
         )}
         {tasks.map((task) => (
-          <div key={task.id} className="flex items-start justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div key={task.id} className="flex items-start justify-between rounded-2xl border border-[#E5E4E0] bg-white px-6 py-5">
             <div>
-              <p className="text-sm font-medium text-slate-900">{task.title}</p>
-              {task.description && <p className="mt-0.5 text-xs text-slate-500">{task.description}</p>}
-              <p className="mt-1 text-xs text-slate-400">{task.client?.name}</p>
+              <p className="text-sm font-semibold text-[#0D0D0D]">{task.title}</p>
+              {task.description && <p className="mt-0.5 text-xs text-[#6B6B6B]">{task.description}</p>}
+              <p className="mt-1.5 text-xs text-[#6B6B6B]">{task.client?.name}</p>
             </div>
-            <span className="text-sm font-semibold text-slate-900">₱{Number(task.amount).toFixed(2)}</span>
+            <span className="text-sm font-bold text-[#0D0D0D]">₱{Number(task.amount).toFixed(2)}</span>
           </div>
         ))}
       </div>

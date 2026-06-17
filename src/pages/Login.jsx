@@ -2,14 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
-/**
- * Email + password auth. Toggles between sign in and sign up.
- * On any Supabase error we surface the full message to the user
- * (per the project workflow rule about showing real errors).
- */
 export default function Login() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState("signin"); // "signin" | "signup"
+  const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,13 +25,8 @@ export default function Login() {
 
     setSubmitting(false);
 
-    if (authError) {
-      setError(authError.message);
-      return;
-    }
+    if (authError) { setError(authError.message); return; }
 
-    // If email confirmation is enabled in Supabase, signUp returns a user
-    // but no active session — tell the user to confirm before signing in.
     if (isSignup && !data.session) {
       setMessage("Check your email to confirm your account, then sign in.");
       setMode("signin");
@@ -47,60 +37,59 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-900">TaskBill</h1>
-        <p className="mt-1 text-sm text-slate-500">
+    <div className="flex min-h-screen items-center justify-center bg-[#F5F4F0] px-4">
+      <div className="w-full max-w-sm">
+        {/* Wordmark */}
+        <h1 className="text-3xl font-bold tracking-tight text-[#0D0D0D]">TaskBill</h1>
+        <p className="mt-1 text-sm text-[#6B6B6B]">
           {isSignup ? "Create your account" : "Sign in to your account"}
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Email</label>
+            <label className="block text-xs font-medium uppercase tracking-widest text-[#6B6B6B] mb-1.5">
+              Email
+            </label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
+              className="w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Password</label>
+            <label className="block text-xs font-medium uppercase tracking-widest text-[#6B6B6B] mb-1.5">
+              Password
+            </label>
             <input
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
+              className="w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors"
             />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
-          {message && <p className="text-sm text-green-600">{message}</p>}
+          {message && <p className="text-sm text-emerald-600">{message}</p>}
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="w-full rounded-xl bg-[#0D0D0D] py-3 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity"
           >
-            {submitting ? "Please wait…" : isSignup ? "Sign up" : "Sign in"}
+            {submitting ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
           </button>
         </form>
 
         <button
-          onClick={() => {
-            setMode(isSignup ? "signin" : "signup");
-            setError("");
-            setMessage("");
-          }}
-          className="mt-4 w-full text-center text-sm text-slate-500 hover:text-slate-900"
+          onClick={() => { setMode(isSignup ? "signin" : "signup"); setError(""); setMessage(""); }}
+          className="mt-6 w-full text-center text-sm text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors"
         >
-          {isSignup
-            ? "Already have an account? Sign in"
-            : "Need an account? Sign up"}
+          {isSignup ? "Already have an account? Sign in" : "Need an account? Sign up"}
         </button>
       </div>
     </div>

@@ -8,21 +8,26 @@ const NAV_ITEMS = [
 ];
 
 export default function Layout() {
-  const { user, signOut } = useAuth();
+  const { profile, user, signOut } = useAuth();
+  const displayName = profile?.username || user?.email?.split("@")[0] || "";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
-        <div className="flex items-center gap-6">
-          <span className="text-lg font-semibold text-slate-900">TaskBill</span>
-          <nav className="flex gap-4">
+    <div className="min-h-screen bg-[#F5F4F0]">
+      <header className="flex items-center justify-between border-b border-[#E5E4E0] bg-white px-6 py-5">
+        <div className="flex items-center gap-8">
+          <span className="text-base font-bold tracking-tight text-[#0D0D0D]">TaskBill</span>
+          <nav className="flex gap-6">
             {NAV_ITEMS.map(({ to, label, end }) => (
               <NavLink
                 key={to}
                 to={to}
                 end={end}
                 className={({ isActive }) =>
-                  `text-sm font-medium ${isActive ? "text-slate-900" : "text-slate-400 hover:text-slate-700"}`
+                  `text-sm transition-colors ${
+                    isActive
+                      ? "font-semibold text-[#0D0D0D]"
+                      : "text-[#6B6B6B] hover:text-[#0D0D0D]"
+                  }`
                 }
               >
                 {label}
@@ -31,10 +36,12 @@ export default function Layout() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-500">{user?.email}</span>
+          {displayName && (
+            <span className="text-sm text-[#6B6B6B]">{displayName}</span>
+          )}
           <button
             onClick={signOut}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            className="rounded-xl border border-[#E5E4E0] px-4 py-1.5 text-sm font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors"
           >
             Sign out
           </button>
