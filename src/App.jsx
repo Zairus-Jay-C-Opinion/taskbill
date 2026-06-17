@@ -1,5 +1,6 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import PlanGate from "./auth/PlanGate";
 import Layout from "./pages/Layout";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
@@ -17,9 +18,12 @@ export default function App() {
           </ProtectedRoute>
         }
       >
+        {/* Home is always reachable — it shows the plan selection overlay if needed */}
         <Route index element={<Home />} />
-        <Route path="tasks" element={<Tasks />} />
-        <Route path="invoices" element={<Invoices />} />
+
+        {/* Tasks and Invoices require a plan */}
+        <Route path="tasks" element={<PlanGate><Tasks /></PlanGate>} />
+        <Route path="invoices" element={<PlanGate><Invoices /></PlanGate>} />
       </Route>
     </Routes>
   );
