@@ -37,6 +37,31 @@ export async function getInvoiceCountThisWeek() {
   return count ?? 0;
 }
 
+export async function uploadLogo(userId, file) {
+  const ext = file.name.split(".").pop();
+  const path = `${userId}/logo.${ext}`;
+  const { error } = await supabase.storage
+    .from("logos")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from("logos").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function saveBranding(userId, { logoUrl, brandColor }) {
+  const updates = {};
+  if (logoUrl !== undefined) updates.logo_url = logoUrl;
+  if (brandColor !== undefined) updates.brand_color = brandColor;
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("id", userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function saveCurrency(userId, currency) {
   const { data, error } = await supabase
     .from("profiles")
