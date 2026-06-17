@@ -29,6 +29,8 @@ export default function Invoices() {
   const [selected, setSelected] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [sort, setSort] = useState("latest");
+  const [searchClient, setSearchClient] = useState("");
 
   // Keep a stable ref to load() so the Realtime callback never goes stale
   const loadRef = useRef(null);
@@ -182,13 +184,44 @@ export default function Invoices() {
     }
   }
 
-  // Clients that have unbilled tasks but no active draft invoice
   const clientsWithDraft = new Set(
     invoices.filter((inv) => inv.status === "draft").map((inv) => inv.client_id)
   );
+  // Only surface unbilled tasks for clients that have at least one paid invoice —
+  // new tasks with no invoice history use the Create Invoice form instead
+  const clientsWithPaid = new Set(
+    invoices.filter((inv) => inv.status === "paid").map((inv) => inv.client_id)
+  );
   const unbilledByClient = clients
     .map((c) => ({ client: c, tasks: clientTasksFor(c.id) }))
-    .filter(({ client, tasks }) => tasks.length > 0 && !clientsWithDraft.has(client.id));
+    .filter(({ client, tasks }) =>
+      tasks.length > 0 &&
+      !clientsWithDraft.has(client.id) &&
+      clientsWithPaid.has(client.id)
+    );
+
+  const displayedInvoices = [...invoices]
+    .filter((inv) => !searchClient || inv.client?.name?.toLowerCase().includes(searchClient.toLowerCase()))
+    .sort((a, b) => {
+      switch (sort) {
+        case "oldest":    return new Date(a.created_at) - new Date(b.created_at);
+        case "total-hi":  return b.total - a.total;
+        case "total-lo":  return a.total - b.total;
+        case "due-soon": {
+          if (!a.due_date && !b.due_date) return 0;
+          if (!a.due_date) return 1;
+          if (!b.due_date) return -1;
+          return new Date(a.due_date) - new Date(b.due_date);
+        }
+        case "due-late": {
+          if (!a.due_date && !b.due_date) return 0;
+          if (!a.due_date) return 1;
+          if (!b.due_date) return -1;
+          return new Date(b.due_date) - new Date(a.due_date);
+        }
+        default: return new Date(b.created_at) - new Date(a.created_at);
+      }
+    });
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
@@ -243,13 +276,35 @@ export default function Invoices() {
         </div>
       )}
 
+      {/* ── Filter / sort ── */}
+      <div className="mt-6 flex gap-3">
+        <input
+          placeholder="Search by client…"
+          value={searchClient}
+          onChange={(e) => setSearchClient(e.target.value)}
+          className="flex-1 rounded-xl border border-[#E5E4E0] bg-white px-4 py-2.5 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors"
+        />
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="rounded-xl border border-[#E5E4E0] bg-white px-4 py-2.5 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] transition-colors"
+        >
+          <option value="latest">Latest</option>
+          <option value="oldest">Oldest</option>
+          <option value="total-hi">Total: High to Low</option>
+          <option value="total-lo">Total: Low to High</option>
+          <option value="due-soon">Due date: Soonest</option>
+          <option value="due-late">Due date: Latest</option>
+        </select>
+      </div>
+
       {/* ── Invoice list ── */}
-      <div className="mt-8 space-y-4">
+      <div className="mt-4 space-y-4">
         {loading && <p className="text-sm text-[#6B6B6B]">Loading…</p>}
-        {!loading && invoices.length === 0 && (
-          <p className="text-sm text-[#6B6B6B]">No invoices yet.</p>
+        {!loading && displayedInvoices.length === 0 && (
+          <p className="text-sm text-[#6B6B6B]">{invoices.length === 0 ? "No invoices yet." : "No invoices match."}</p>
         )}
-        {invoices.map((inv) => (
+        {displayedInvoices.map((inv) => (
           <div key={inv.id} className="rounded-2xl border border-[#E5E4E0] bg-white overflow-hidden">
             <div className="flex items-start justify-between px-6 py-5">
               <div>

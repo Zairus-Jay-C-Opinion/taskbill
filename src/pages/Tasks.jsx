@@ -59,6 +59,8 @@ export default function Tasks() {
   const [form, setForm] = useState({ clientId: "", title: "", description: "", amount: "", dueDate: "" });
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("latest");
 
   const [showClientForm, setShowClientForm] = useState(false);
   const [clientForm, setClientForm] = useState({ name: "", email: "" });
@@ -133,6 +135,29 @@ export default function Tasks() {
       setDeletingId(null);
     }
   }
+
+  const filteredTasks = [...tasks]
+    .filter((t) => !search || t.client?.name?.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      switch (sort) {
+        case "oldest":   return new Date(a.created_at) - new Date(b.created_at);
+        case "price-hi": return Number(b.amount) - Number(a.amount);
+        case "price-lo": return Number(a.amount) - Number(b.amount);
+        case "due-soon": {
+          if (!a.due_date && !b.due_date) return 0;
+          if (!a.due_date) return 1;
+          if (!b.due_date) return -1;
+          return new Date(a.due_date) - new Date(b.due_date);
+        }
+        case "due-late": {
+          if (!a.due_date && !b.due_date) return 0;
+          if (!a.due_date) return 1;
+          if (!b.due_date) return -1;
+          return new Date(b.due_date) - new Date(a.due_date);
+        }
+        default: return new Date(b.created_at) - new Date(a.created_at);
+      }
+    });
 
   // Tasks due within 3 days — for in-app banner
   const today = new Date();
@@ -211,13 +236,40 @@ export default function Tasks() {
         </form>
       )}
 
+      {/* ── Filter / sort ── */}
+      {!loading && tasks.length > 0 && (
+        <div className="mt-6 flex gap-3">
+          <input
+            placeholder="Search by client…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 rounded-xl border border-[#E5E4E0] bg-white px-4 py-2.5 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors"
+          />
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="rounded-xl border border-[#E5E4E0] bg-white px-4 py-2.5 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] transition-colors"
+          >
+            <option value="latest">Latest</option>
+            <option value="oldest">Oldest</option>
+            <option value="price-hi">Price: High to Low</option>
+            <option value="price-lo">Price: Low to High</option>
+            <option value="due-soon">Due date: Soonest</option>
+            <option value="due-late">Due date: Latest</option>
+          </select>
+        </div>
+      )}
+
       {/* ── Task list ── */}
-      <div className="mt-8 space-y-3">
+      <div className="mt-4 space-y-3">
         {loading && <p className="text-sm text-[#6B6B6B]">Loading…</p>}
         {!loading && tasks.length === 0 && (
           <p className="text-sm text-[#6B6B6B]">No unbilled tasks yet.</p>
         )}
-        {tasks.map((task) => (
+        {!loading && tasks.length > 0 && filteredTasks.length === 0 && (
+          <p className="text-sm text-[#6B6B6B]">No tasks match "{search}".</p>
+        )}
+        {filteredTasks.map((task) => (
           <div key={task.id} className="flex items-start justify-between rounded-2xl border border-[#E5E4E0] bg-white px-6 py-5">
             <div>
               <p className="text-sm font-semibold text-[#0D0D0D]">{task.title}</p>
