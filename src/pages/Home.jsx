@@ -150,15 +150,18 @@ export default function Home() {
             TaskBill brings together task tracking and invoicing into a single, distraction-free workspace.
             No spreadsheets, no manual calculations — just clear records of your work and a fast path to getting paid.
           </p>
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="mt-10 divide-y divide-[#E5E4E0]">
             {[
-              { title: "Track every task", body: "Log work by client with a description and rate. Nothing slips through the cracks." },
-              { title: "Invoice in seconds", body: "Group tasks into an invoice and send it — totals calculated automatically." },
-              { title: "Stay in control", body: "Monitor draft, sent, and paid invoices at a glance. Your data, your rules." },
-            ].map((card) => (
-              <div key={card.title} className="rounded-2xl border border-[#E5E4E0] bg-white px-6 py-6">
-                <p className="text-sm font-bold text-[#0D0D0D]">{card.title}</p>
-                <p className="mt-2 text-sm text-[#6B6B6B] leading-relaxed">{card.body}</p>
+              ["01", "Track every task", "Log work by client with a title, description, and amount. Nothing slips through the cracks."],
+              ["02", "Invoice in seconds", "Group unbilled tasks into an invoice and send it — totals are calculated automatically."],
+              ["03", "Stay in control", "Monitor draft, sent, and paid invoices at a glance. Your data, isolated and secure."],
+            ].map(([num, title, body]) => (
+              <div key={num} className="flex gap-8 py-7">
+                <span className="text-xs font-semibold text-[#6B6B6B] w-6 shrink-0 pt-0.5">{num}</span>
+                <div>
+                  <p className="text-base font-bold text-[#0D0D0D]">{title}</p>
+                  <p className="mt-1.5 text-sm text-[#6B6B6B] leading-relaxed">{body}</p>
+                </div>
               </div>
             ))}
           </div>
