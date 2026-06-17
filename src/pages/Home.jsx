@@ -18,6 +18,30 @@ function useReveal() {
   return ref;
 }
 
+function ScrollToTop() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 300);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      className="fixed bottom-8 right-8 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-[#0D0D0D] text-white shadow-lg hover:opacity-80 transition-opacity"
+      aria-label="Back to top"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 19V5M5 12l7-7 7 7" />
+      </svg>
+    </button>
+  );
+}
+
 const ABOUT_TABS = [
   {
     label: "Track tasks",
@@ -149,6 +173,7 @@ export default function Home() {
 
   return (
     <div>
+      <ScrollToTop />
       {/* ── Hero ── */}
       <section
         className="relative flex min-h-[calc(100vh-73px)] items-center justify-center"
@@ -169,10 +194,25 @@ export default function Home() {
           <p className="fade-up fade-up-delay-2 mt-5 text-lg text-[#6B6B6B]">
             Manage tasks, generate invoices, and get paid — all in one place.
           </p>
+          {/* CTA buttons */}
+          <div className="fade-up fade-up-delay-3 mt-8 flex items-center justify-center gap-3">
+            <a
+              href="#plans"
+              className="rounded-xl bg-[#0D0D0D] px-6 py-3 text-sm font-semibold text-white hover:opacity-80 transition-opacity"
+            >
+              Start now
+            </a>
+            <a
+              href="#about"
+              className="rounded-xl border border-[#0D0D0D] bg-white/70 px-6 py-3 text-sm font-semibold text-[#0D0D0D] hover:bg-white transition-colors"
+            >
+              Learn more
+            </a>
+          </div>
           {/* Scroll indicator */}
           <a
             href="#about"
-            className="fade-up fade-up-delay-3 inline-block mt-12 text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors"
+            className="fade-up fade-up-delay-3 inline-block mt-10 text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors"
             aria-label="Scroll to about"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-bounce">
