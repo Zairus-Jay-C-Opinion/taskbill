@@ -86,7 +86,7 @@ export default function Invoices() {
     const hasUnbilled = unbilledTasks.some((t) => t.client_id === form.clientId);
     if (!hasUnbilled) {
       const clientName = clients.find((c) => c.id === form.clientId)?.name ?? "this client";
-      setError(`No unbilled tasks for ${clientName}. Add new tasks before creating an invoice.`);
+      setError(`No new unbilled tasks for ${clientName}. Add new tasks before creating an invoice.`);
       return;
     }
     setSubmitting(true);
