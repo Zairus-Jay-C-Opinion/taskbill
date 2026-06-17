@@ -51,6 +51,10 @@ export default function Layout() {
       <main>
         <Outlet />
       </main>
+
+      <footer className="border-t border-[#E5E4E0] bg-white px-6 py-6 text-center text-sm text-[#6B6B6B]">
+        © {new Date().getFullYear()} TaskBill. All rights reserved.
+      </footer>
     </div>
   );
 }
