@@ -140,7 +140,6 @@ export default function Home() {
   if (loading || profile === undefined) return null;
 
   const needsUsername = !profile?.username;
-  const needsPlan = profile?.username && !profile?.plan;
 
   async function handleSaveUsername(e) {
     e.preventDefault();
@@ -194,60 +193,9 @@ export default function Home() {
             {promptError && <p className="text-sm text-red-600">{promptError}</p>}
             <button type="submit" disabled={saving || !username.trim()}
               className="w-full rounded-xl bg-[#0D0D0D] py-3 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity">
-              {saving ? "Saving…" : "Continue"}
+              {saving ? "Saving…" : "Get started"}
             </button>
           </form>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Plan selection prompt ──
-  if (needsPlan) {
-    return (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-[#F5F4F0]">
-        <div className="min-h-full flex flex-col items-center justify-center px-6 py-16">
-          <div className="w-full max-w-4xl fade-up">
-            <p className="text-center text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Almost there</p>
-            <h1 className="mt-3 text-center text-4xl font-bold tracking-tight text-[#0D0D0D]">
-              Choose your plan
-            </h1>
-            <p className="mt-2 text-center text-[#6B6B6B]">Start free. Upgrade anytime.</p>
-
-            {promptError && (
-              <p className="mt-4 text-center text-sm text-red-600">{promptError}</p>
-            )}
-
-            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-              {PLANS.map((plan) => (
-                <div key={plan.key}
-                  className={`rounded-2xl border px-6 py-8 flex flex-col ${plan.highlight ? "border-[#0D0D0D] bg-[#0D0D0D] text-white" : "border-[#E5E4E0] bg-white"}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-widest ${plan.highlight ? "text-white/60" : "text-[#6B6B6B]"}`}>
-                    {plan.name}
-                  </p>
-                  <div className="mt-3 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className={`text-sm ${plan.highlight ? "text-white/60" : "text-[#6B6B6B]"}`}>{plan.period}</span>
-                  </div>
-                  <p className={`mt-2 text-sm ${plan.highlight ? "text-white/70" : "text-[#6B6B6B]"}`}>{plan.description}</p>
-                  <ul className="mt-6 space-y-2 flex-1">
-                    {plan.features.map((f) => (
-                      <li key={f} className={`flex items-center gap-2 text-sm ${plan.highlight ? "text-white/80" : "text-[#0D0D0D]"}`}>
-                        <span className={plan.highlight ? "text-white" : "text-[#0D0D0D]"}>✓</span>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    onClick={() => handleSelectPlan(plan.key)}
-                    disabled={!!selectingPlan}
-                    className={`mt-8 w-full rounded-xl py-2.5 text-sm font-semibold transition-opacity disabled:opacity-50 ${plan.highlight ? "bg-white text-[#0D0D0D]" : "bg-[#0D0D0D] text-white"} hover:opacity-80`}>
-                    {selectingPlan === plan.key ? "Please wait…" : plan.cta}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     );
@@ -310,10 +258,16 @@ export default function Home() {
           <h2 className="mt-3 text-4xl font-bold tracking-tight text-[#0D0D0D]">Simple, transparent plans.</h2>
           <p className="mt-3 text-[#6B6B6B]">Start free. Upgrade when you're ready.</p>
 
-          {/* Current plan badge */}
-          <p className="mt-4 text-sm text-[#6B6B6B]">
-            Your current plan: <span className="font-semibold text-[#0D0D0D] capitalize">{profile.plan}</span>
-          </p>
+          {/* Plan status */}
+          {profile.plan ? (
+            <p className="mt-4 text-sm text-[#6B6B6B]">
+              Your current plan: <span className="font-semibold text-[#0D0D0D] capitalize">{profile.plan}</span>
+            </p>
+          ) : (
+            <p className="mt-4 inline-block rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+              Pick a plan below to unlock Tasks &amp; Invoices.
+            </p>
+          )}
 
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {PLANS.map((plan) => {

@@ -6,7 +6,7 @@ import { useAuth } from "./AuthProvider";
 export default function PlanGate({ children }) {
   const { profile } = useAuth();
 
-  if (profile && !profile.plan) return <Navigate to="/" replace />;
+  if (profile && !profile.plan) return <Navigate to="/#plans" replace />;
 
   return children;
 }
