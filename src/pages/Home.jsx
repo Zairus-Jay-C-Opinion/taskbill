@@ -43,7 +43,7 @@ function AboutTabs() {
           <button
             key={tab.label}
             onClick={() => setActive(i)}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+            className={`px-5 py-3 text-base font-medium transition-colors relative ${
               active === i ? "text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"
             }`}
           >
@@ -54,7 +54,7 @@ function AboutTabs() {
           </button>
         ))}
       </div>
-      <p key={active} className="mt-6 text-[#6B6B6B] leading-relaxed fade-up">
+      <p key={active} className="mt-8 text-lg text-[#6B6B6B] leading-relaxed fade-up">
         {ABOUT_TABS[active].body}
       </p>
     </div>
@@ -183,13 +183,13 @@ export default function Home() {
       </section>
 
       {/* ── About ── */}
-      <section id="about" className="bg-[#F5F4F0] py-24 px-6">
+      <section id="about" className="bg-[#F5F4F0] py-28 px-6">
         <div ref={aboutRef} className="mx-auto max-w-3xl opacity-0">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">About</p>
-          <h2 className="mt-3 text-4xl font-bold tracking-tight text-[#0D0D0D]">
+          <h2 className="mt-3 text-5xl font-bold tracking-tight text-[#0D0D0D]">
             Built for freelancers who mean business.
           </h2>
-          <p className="mt-5 text-lg text-[#6B6B6B] leading-relaxed">
+          <p className="mt-5 text-xl text-[#6B6B6B] leading-relaxed">
             TaskBill brings together task tracking and invoicing into a single, distraction-free workspace.
             No spreadsheets, no manual calculations — just clear records of your work and a fast path to getting paid.
           </p>
