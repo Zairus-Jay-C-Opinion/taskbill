@@ -91,15 +91,29 @@ export async function getInvoices() {
     .select(`
       *,
       client:clients(name, email),
-      tasks(amount)
+      tasks(id, title, amount)
     `)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  // Derive total from associated tasks
   return data.map((inv) => ({
     ...inv,
     total: (inv.tasks ?? []).reduce((sum, t) => sum + Number(t.amount), 0),
   }));
+}
+
+export async function deleteInvoice(invoiceId) {
+  // Unlink tasks first so they return to unbilled
+  const { error: unlinkError } = await supabase
+    .from("tasks")
+    .update({ invoice_id: null })
+    .eq("invoice_id", invoiceId);
+  if (unlinkError) throw unlinkError;
+
+  const { error } = await supabase
+    .from("invoices")
+    .delete()
+    .eq("id", invoiceId);
+  if (error) throw error;
 }
 
 export async function createInvoice({ clientId, dueDate }) {

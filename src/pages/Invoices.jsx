@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus, savePaymentLink } from "../lib/db";
+import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus, savePaymentLink, deleteInvoice } from "../lib/db";
 
 const STATUS_STYLES = {
   draft: "bg-stone-100 text-stone-600",
@@ -26,6 +26,8 @@ export default function Invoices() {
 
   const [assigningTo, setAssigningTo] = useState(null);
   const [selected, setSelected] = useState([]);
+  const [copiedId, setCopiedId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => { load(); }, []);
 
@@ -121,8 +123,23 @@ export default function Invoices() {
     }
   }
 
-  async function handleCopyLink(url) {
+  async function handleCopyLink(invoiceId, url) {
     await navigator.clipboard.writeText(url);
+    setCopiedId(invoiceId);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  async function handleDelete(invoiceId) {
+    setDeletingId(invoiceId);
+    setError("");
+    try {
+      await deleteInvoice(invoiceId);
+      await load();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   const clientTasksFor = (clientId) => unbilledTasks.filter((t) => t.client_id === clientId);
@@ -177,7 +194,21 @@ export default function Invoices() {
               </div>
             </div>
 
-            <div className="border-t border-[#E5E4E0] px-6 py-3 bg-[#F5F4F0] space-y-2">
+            <div className="border-t border-[#E5E4E0] px-6 py-4 bg-[#F5F4F0] space-y-3">
+              {/* Task list — history for sent/paid, live for draft */}
+              {inv.tasks?.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Tasks</p>
+                  {inv.tasks.map((t) => (
+                    <div key={t.id} className="flex justify-between text-xs text-[#0D0D0D]">
+                      <span>{t.title}</span>
+                      <span className="text-[#6B6B6B]">₱{Number(t.amount).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Actions */}
               <div className="flex items-center gap-4">
                 {clientTasksFor(inv.client_id).length > 0 && inv.status === "draft" && (
                   <button onClick={() => { setAssigningTo(inv.id); setSelected([]); }}
@@ -192,17 +223,24 @@ export default function Invoices() {
                     {advancingId === inv.id ? "Generating link…" : `Mark as ${NEXT_STATUS[inv.status]}`}
                   </button>
                 )}
+                {inv.status === "draft" && (
+                  <button onClick={() => handleDelete(inv.id)}
+                    disabled={deletingId === inv.id}
+                    className="text-xs text-red-400 hover:text-red-600 underline underline-offset-4 transition-colors disabled:opacity-50 ml-auto">
+                    {deletingId === inv.id ? "Deleting…" : "Delete"}
+                  </button>
+                )}
               </div>
 
-              {/* Payment link — shown once invoice is sent */}
+              {/* Payment link */}
               {inv.payment_link && (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[#6B6B6B] truncate max-w-xs">{inv.payment_link}</span>
                   <button
-                    onClick={() => handleCopyLink(inv.payment_link)}
+                    onClick={() => handleCopyLink(inv.id, inv.payment_link)}
                     className="shrink-0 rounded-lg border border-[#E5E4E0] bg-white px-3 py-1 text-xs font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors"
                   >
-                    Copy link
+                    {copiedId === inv.id ? "Copied!" : "Copy link"}
                   </button>
                 </div>
               )}
