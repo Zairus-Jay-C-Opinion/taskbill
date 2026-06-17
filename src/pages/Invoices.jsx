@@ -15,6 +15,8 @@ const NEXT_STATUS = { draft: "sent" }; // sent → paid is webhook-only
 const inputCls = "w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors";
 const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity";
 const btnGhost = "rounded-xl border border-[#E5E4E0] px-5 py-2.5 text-sm font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors";
+const btnSubtle = "rounded-lg border border-[#E5E4E0] bg-white px-3 py-1 text-xs font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] disabled:opacity-40 transition-colors";
+const btnSubtleRed = "rounded-lg border border-red-100 bg-white px-3 py-1 text-xs font-medium text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors";
 
 export default function Invoices() {
   const { profile } = useAuth();
@@ -446,31 +448,27 @@ export default function Invoices() {
               )}
 
               {/* Actions */}
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 {clientTasksFor(inv.client_id).length > 0 && inv.status === "draft" && (
-                  <button onClick={() => { setAssigningTo(inv.id); setSelected([]); }}
-                    className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
+                  <button onClick={() => { setAssigningTo(inv.id); setSelected([]); }} className={btnSubtle}>
                     Assign tasks ({clientTasksFor(inv.client_id).length} unbilled)
                   </button>
                 )}
                 {inv.tasks?.length > 0 && profile?.plan !== "free" && (
                   <button type="button" onClick={() => handleAiDraft(inv)}
-                    disabled={draftingId === inv.id}
-                    className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors disabled:opacity-50">
+                    disabled={draftingId === inv.id} className={btnSubtle}>
                     {draftingId === inv.id ? "Drafting…" : "Draft with AI"}
                   </button>
                 )}
                 {NEXT_STATUS[inv.status] && (
                   <button onClick={() => handleAdvanceStatus(inv)}
-                    disabled={advancingId === inv.id}
-                    className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors disabled:opacity-50">
+                    disabled={advancingId === inv.id} className={btnSubtle}>
                     {advancingId === inv.id ? "Generating link…" : "Get payment link"}
                   </button>
                 )}
-                {/* TEMP: delete allowed on all statuses for cleanup */}
                 <button onClick={() => handleDelete(inv.id)}
                   disabled={deletingId === inv.id}
-                  className="text-xs text-red-400 hover:text-red-600 underline underline-offset-4 transition-colors disabled:opacity-50 ml-auto">
+                  className={`${btnSubtleRed} ml-auto`}>
                   {deletingId === inv.id ? "Deleting…" : "Delete"}
                 </button>
               </div>
@@ -486,7 +484,7 @@ export default function Invoices() {
                         next.has(inv.id) ? next.delete(inv.id) : next.add(inv.id);
                         return next;
                       })}
-                      className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors">
+                      className={btnSubtle}>
                       {collapsedDrafts.has(inv.id) ? "Show" : "Hide"}
                     </button>
                   </div>
@@ -499,7 +497,7 @@ export default function Invoices() {
                           setCopiedDraftId(inv.id);
                           setTimeout(() => setCopiedDraftId(null), 2000);
                         }}
-                        className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
+                        className={btnSubtle}>
                         {copiedDraftId === inv.id ? "Copied!" : "Copy"}
                       </button>
                     </>
