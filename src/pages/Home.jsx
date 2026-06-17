@@ -170,6 +170,7 @@ export default function Home() {
       if (planKey === "free") {
         await savePlan(user.id, "free");
         await refreshProfile();
+        setSelectingPlan(null);
       } else {
         const res = await fetch("/api/stripe/create-checkout-session", {
           method: "POST",
