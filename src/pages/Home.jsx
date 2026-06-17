@@ -64,7 +64,7 @@ const ABOUT_TABS = [
 function AboutTabs() {
   const [active, setActive] = useState(0);
   return (
-    <div className="mt-10 text-left">
+    <div className="mt-10">
       <div className="flex gap-1 border-b border-[#E5E4E0]">
         {ABOUT_TABS.map((tab, i) => (
           <button key={tab.label} onClick={() => setActive(i)}
@@ -74,7 +74,7 @@ function AboutTabs() {
           </button>
         ))}
       </div>
-      <p key={active} className="mt-8 text-lg text-[#6B6B6B] leading-relaxed fade-up text-left">
+      <p key={active} className="mt-8 text-lg text-[#6B6B6B] leading-relaxed fade-up">
         {ABOUT_TABS[active].body}
       </p>
     </div>
@@ -244,13 +244,13 @@ export default function Home() {
       </section>
 
       {/* ── About ── */}
-      <section id="about" className="bg-[#F5F4F0] py-24 px-6">
-        <div ref={aboutRef} className="mx-auto max-w-4xl text-center" style={{ opacity: 0, transform: "translateY(24px)" }}>
+      <section id="about" className="bg-[#F5F4F0] py-28 px-6">
+        <div ref={aboutRef} className="mx-auto max-w-3xl" style={{ opacity: 0, transform: "translateY(24px)" }}>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">About</p>
           <h2 className="mt-3 text-5xl font-bold tracking-tight text-[#0D0D0D]">
             Built for freelancers who mean business.
           </h2>
-          <p className="mt-5 text-xl text-[#6B6B6B] leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-5 text-xl text-[#6B6B6B] leading-relaxed">
             TaskBill brings together task tracking and invoicing into a single, distraction-free workspace.
             No spreadsheets, no manual calculations — just clear records of your work and a fast path to getting paid.
           </p>
@@ -260,7 +260,7 @@ export default function Home() {
 
       {/* ── Plans ── */}
       <section id="plans" className="bg-white py-24 px-6 border-t border-[#E5E4E0]">
-        <div ref={plansRef} className="mx-auto max-w-4xl text-center" style={{ opacity: 0, transform: "translateY(24px)" }}>
+        <div ref={plansRef} className="mx-auto max-w-4xl" style={{ opacity: 0, transform: "translateY(24px)" }}>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Pricing</p>
           <h2 className="mt-3 text-4xl font-bold tracking-tight text-[#0D0D0D]">Simple, transparent plans.</h2>
           <p className="mt-3 text-[#6B6B6B]">Start free. Upgrade when you're ready.</p>
