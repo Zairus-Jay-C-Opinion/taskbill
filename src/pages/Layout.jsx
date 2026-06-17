@@ -43,6 +43,14 @@ export default function Layout() {
                 {label}
               </NavLink>
             ))}
+            {profile?.plan === "business" && (
+              <NavLink to="/analytics"
+                className={({ isActive }) =>
+                  `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
+                }>
+                Analytics
+              </NavLink>
+            )}
             <span className="text-[#E5E4E0]">|</span>
             {INFO_NAV.map(({ href, label }) => (
               <Link key={href} to={href}

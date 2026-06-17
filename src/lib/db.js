@@ -110,6 +110,15 @@ export async function getTasks({ invoiceId = null } = {}) {
   return data;
 }
 
+export async function getAllTasks() {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*, client:clients(name)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
 export async function createTask({ clientId, title, description, amount, dueDate }) {
   const { data, error } = await supabase
     .from("tasks")

@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Tasks from "./pages/Tasks";
 import Invoices from "./pages/Invoices";
+import Analytics from "./pages/Analytics";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         {/* Tasks and Invoices require a plan */}
         <Route path="tasks" element={<PlanGate><Tasks /></PlanGate>} />
         <Route path="invoices" element={<PlanGate><Invoices /></PlanGate>} />
+        <Route path="analytics" element={<Analytics />} />
       </Route>
     </Routes>
   );
