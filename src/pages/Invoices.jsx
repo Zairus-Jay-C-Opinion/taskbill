@@ -39,6 +39,7 @@ export default function Invoices() {
   const [draftingId, setDraftingId] = useState(null);
   const [aiDrafts, setAiDrafts] = useState({});
   const [copiedDraftId, setCopiedDraftId] = useState(null);
+  const [collapsedDrafts, setCollapsedDrafts] = useState(new Set());
 
   // Keep a stable ref to load() so the Realtime callback never goes stale
   const loadRef = useRef(null);
@@ -459,17 +460,32 @@ export default function Invoices() {
               {/* AI draft result */}
               {aiDrafts[inv.id] && (
                 <div className="rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">AI Draft</p>
-                  <p className="text-xs text-[#0D0D0D] leading-relaxed whitespace-pre-wrap">{aiDrafts[inv.id]}</p>
-                  <button type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(aiDrafts[inv.id]);
-                      setCopiedDraftId(inv.id);
-                      setTimeout(() => setCopiedDraftId(null), 2000);
-                    }}
-                    className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
-                    {copiedDraftId === inv.id ? "Copied!" : "Copy"}
-                  </button>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">AI Draft</p>
+                    <button type="button"
+                      onClick={() => setCollapsedDrafts((prev) => {
+                        const next = new Set(prev);
+                        next.has(inv.id) ? next.delete(inv.id) : next.add(inv.id);
+                        return next;
+                      })}
+                      className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors">
+                      {collapsedDrafts.has(inv.id) ? "Show" : "Hide"}
+                    </button>
+                  </div>
+                  {!collapsedDrafts.has(inv.id) && (
+                    <>
+                      <p className="text-xs text-[#0D0D0D] leading-relaxed whitespace-pre-wrap">{aiDrafts[inv.id]}</p>
+                      <button type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(aiDrafts[inv.id]);
+                          setCopiedDraftId(inv.id);
+                          setTimeout(() => setCopiedDraftId(null), 2000);
+                        }}
+                        className="text-xs text-[#6B6B6B] hover:text-[#0D0D0D] underline underline-offset-4 transition-colors">
+                        {copiedDraftId === inv.id ? "Copied!" : "Copy"}
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 
