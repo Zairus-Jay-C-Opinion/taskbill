@@ -11,6 +11,17 @@ export async function getProfile() {
   return data;
 }
 
+export async function savePlan(userId, plan) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ plan })
+    .eq("id", userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function upsertProfile({ id, username }) {
   const { data, error } = await supabase
     .from("profiles")

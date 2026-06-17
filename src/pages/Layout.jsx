@@ -1,10 +1,15 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
-const NAV_ITEMS = [
+const APP_NAV = [
   { to: "/", label: "Home", end: true },
   { to: "/tasks", label: "Tasks" },
   { to: "/invoices", label: "Invoices" },
+];
+
+const INFO_NAV = [
+  { href: "/#about", label: "About" },
+  { href: "/#plans", label: "Pricing" },
 ];
 
 export default function Layout() {
@@ -16,22 +21,21 @@ export default function Layout() {
       <header className="flex items-center justify-between border-b border-[#E5E4E0] bg-white px-6 py-5">
         <div className="flex items-center gap-8">
           <Link to="/"><img src="/logo.png" alt="TaskBill" className="h-10 w-auto" style={{ filter: "contrast(1.5) saturate(1.4)" }} /></Link>
-          <nav className="flex gap-6">
-            {NAV_ITEMS.map(({ to, label, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
+          <nav className="flex items-center gap-6">
+            {APP_NAV.map(({ to, label, end }) => (
+              <NavLink key={to} to={to} end={end}
                 className={({ isActive }) =>
-                  `text-sm transition-colors ${
-                    isActive
-                      ? "font-semibold text-[#0D0D0D]"
-                      : "text-[#6B6B6B] hover:text-[#0D0D0D]"
-                  }`
-                }
-              >
+                  `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
+                }>
                 {label}
               </NavLink>
+            ))}
+            <span className="text-[#E5E4E0]">|</span>
+            {INFO_NAV.map(({ href, label }) => (
+              <Link key={href} to={href}
+                className="text-sm text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors">
+                {label}
+              </Link>
             ))}
           </nav>
         </div>

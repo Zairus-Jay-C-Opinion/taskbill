@@ -42,16 +42,29 @@ export default async function handler(req, res) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const invoiceId = session.metadata?.invoiceId;
 
-    if (invoiceId) {
+    // Invoice payment via payment link
+    if (session.metadata?.invoiceId) {
       const { error } = await supabase
         .from("invoices")
         .update({ status: "paid" })
-        .eq("id", invoiceId);
+        .eq("id", session.metadata.invoiceId);
 
       if (error) {
         console.error("Failed to update invoice:", error.message);
+        return res.status(500).json({ error: error.message });
+      }
+    }
+
+    // Plan subscription purchase
+    if (session.metadata?.userId && session.metadata?.plan) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ plan: session.metadata.plan })
+        .eq("id", session.metadata.userId);
+
+      if (error) {
+        console.error("Failed to update plan:", error.message);
         return res.status(500).json({ error: error.message });
       }
     }
