@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { getClients, getTasks, createTask, createClient, deleteTask } from "../lib/db";
+import { useAuth } from "../auth/AuthProvider";
+import { currencySymbol } from "../lib/currency";
 
 const inputCls = "w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors";
 const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity";
 const btnGhost = "rounded-xl border border-[#E5E4E0] px-5 py-2.5 text-sm font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors";
 
-function checkDueNotifications(taskList) {
+function checkDueNotifications(taskList, sym) {
   if (!("Notification" in window)) return;
 
   const today = new Date();
@@ -38,7 +40,7 @@ function checkDueNotifications(taskList) {
       const diff = Math.round((due - today) / 86400000);
       const when = diff === 0 ? "today" : diff === 1 ? "tomorrow" : `in ${diff} days`;
       new Notification(`Task due ${when}`, {
-        body: `${task.title} — ₱${Number(task.amount).toFixed(2)}`,
+        body: `${task.title} — ${sym}${Number(task.amount).toFixed(2)}`,
         icon: "/logo.png",
       });
       alreadyNotified.add(task.id);
@@ -50,7 +52,12 @@ function checkDueNotifications(taskList) {
   fire();
 }
 
+const FREE_CLIENT_LIMIT = 3;
+
 export default function Tasks() {
+  const { profile } = useAuth();
+  const sym = currencySymbol(profile?.currency);
+
   const [tasks, setTasks] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +81,7 @@ export default function Tasks() {
       const [t, c] = await Promise.all([getTasks(), getClients()]);
       setTasks(t);
       setClients(c);
-      checkDueNotifications(t);
+      checkDueNotifications(t, sym);
       if (c.length > 0 && !form.clientId) {
         setForm((f) => ({ ...f, clientId: c[0].id }));
       }
@@ -87,6 +94,10 @@ export default function Tasks() {
 
   async function handleAddClient(e) {
     e.preventDefault();
+    if (profile?.plan === "free" && clients.length >= FREE_CLIENT_LIMIT) {
+      setError(`Free plan is limited to ${FREE_CLIENT_LIMIT} clients. Upgrade to Pro to add more.`);
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -223,7 +234,7 @@ export default function Tasks() {
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className={inputCls} />
           <input placeholder="Description (optional)" value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className={inputCls} />
-          <input required type="number" min="0" step="0.01" placeholder="Amount (₱)" value={form.amount}
+          <input required type="number" min="0" step="0.01" placeholder={`Amount (${sym})`} value={form.amount}
             onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className={inputCls} />
           <div>
             <label className="block text-xs text-[#6B6B6B] mb-1.5">Due date (optional)</label>
@@ -278,7 +289,7 @@ export default function Tasks() {
               {task.due_date && <p className="mt-0.5 text-xs text-[#6B6B6B]">Due {task.due_date}</p>}
             </div>
             <div className="flex flex-col items-end gap-2">
-              <span className="text-sm font-bold text-[#0D0D0D]">₱{Number(task.amount).toFixed(2)}</span>
+              <span className="text-sm font-bold text-[#0D0D0D]">{sym}{Number(task.amount).toFixed(2)}</span>
               {/* TEMP: delete allowed for cleanup */}
               <button onClick={() => handleDeleteTask(task.id)}
                 disabled={deletingId === task.id}

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus, savePaymentLink, deleteInvoice } from "../lib/db";
+import { useAuth } from "../auth/AuthProvider";
+import { currencySymbol } from "../lib/currency";
 
 const STATUS_STYLES = {
   draft: "bg-stone-100 text-stone-600",
@@ -15,6 +17,9 @@ const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold te
 const btnGhost = "rounded-xl border border-[#E5E4E0] px-5 py-2.5 text-sm font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors";
 
 export default function Invoices() {
+  const { profile } = useAuth();
+  const sym = currencySymbol(profile?.currency);
+
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
   const [unbilledTasks, setUnbilledTasks] = useState([]);
@@ -261,7 +266,7 @@ export default function Invoices() {
                   {tasks.map((t) => t.title).join(" · ")}
                 </p>
                 <p className="mt-0.5 text-xs text-[#6B6B6B]">
-                  ₱{tasks.reduce((s, t) => s + Number(t.amount), 0).toFixed(2)} total
+                  {sym}{tasks.reduce((s, t) => s + Number(t.amount), 0).toFixed(2)} total
                 </p>
               </div>
               <button
@@ -315,7 +320,7 @@ export default function Invoices() {
                 )}
               </div>
               <div className="flex flex-col items-end gap-2">
-                <span className="text-lg font-bold text-[#0D0D0D]">₱{inv.total.toFixed(2)}</span>
+                <span className="text-lg font-bold text-[#0D0D0D]">{sym}{inv.total.toFixed(2)}</span>
                 <span className={`rounded-full px-3 py-0.5 text-xs font-medium ${STATUS_STYLES[inv.status]}`}>
                   {inv.status}
                 </span>
@@ -333,7 +338,7 @@ export default function Invoices() {
                         {t.title}
                         {t.due_date && <span className="ml-2 text-[#6B6B6B]">· due {t.due_date}</span>}
                       </span>
-                      <span className="text-[#6B6B6B]">₱{Number(t.amount).toFixed(2)}</span>
+                      <span className="text-[#6B6B6B]">{sym}{Number(t.amount).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -384,7 +389,7 @@ export default function Invoices() {
                     <input type="checkbox" checked={selected.includes(t.id)}
                       onChange={(e) => setSelected((s) => e.target.checked ? [...s, t.id] : s.filter((id) => id !== t.id))}
                       className="accent-[#0D0D0D]" />
-                    {t.title} — ₱{Number(t.amount).toFixed(2)}
+                    {t.title} — {sym}{Number(t.amount).toFixed(2)}
                   </label>
                 ))}
                 <div className="flex gap-2 pt-2">

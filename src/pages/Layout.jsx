@@ -1,5 +1,7 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import { saveCurrency } from "../lib/db";
+import { CURRENCIES, currencySymbol } from "../lib/currency";
 
 const APP_NAV = [
   { to: "/", label: "Home", end: true },
@@ -13,11 +15,22 @@ const INFO_NAV = [
 ];
 
 export default function Layout() {
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, refreshProfile } = useAuth();
   const displayName = profile?.username || user?.email?.split("@")[0] || "";
+  const currentCurrency = profile?.currency ?? "PHP";
+
+  async function handleCurrencyChange(e) {
+    const currency = e.target.value;
+    try {
+      await saveCurrency(user.id, currency);
+      await refreshProfile();
+    } catch {
+      // silent — UI will stay on old value until next refresh
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-[#F5F4F0]">
+    <div className="min-h-screen bg-[#F5F4F0] flex flex-col">
       <header className="flex items-center justify-between border-b border-[#E5E4E0] bg-white px-6 py-5">
         <div className="flex items-center gap-8">
           <Link to="/"><img src="/logo.png" alt="TaskBill" className="h-10 w-auto" style={{ filter: "contrast(1.5) saturate(1.4)" }} /></Link>
@@ -43,6 +56,16 @@ export default function Layout() {
           {displayName && (
             <span className="text-sm text-[#6B6B6B]">{displayName}</span>
           )}
+          <select
+            value={currentCurrency}
+            onChange={handleCurrencyChange}
+            className="rounded-xl border border-[#E5E4E0] bg-white px-3 py-1.5 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] transition-colors"
+            title="Currency"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.code} {c.symbol}</option>
+            ))}
+          </select>
           <button
             onClick={signOut}
             className="rounded-xl border border-[#E5E4E0] px-4 py-1.5 text-sm font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors"
@@ -52,7 +75,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main>
+      <main className="flex-1">
         <Outlet />
       </main>
 

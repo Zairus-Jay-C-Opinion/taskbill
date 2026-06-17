@@ -11,6 +11,17 @@ export async function getProfile() {
   return data;
 }
 
+export async function saveCurrency(userId, currency) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ currency })
+    .eq("id", userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function savePlan(userId, plan) {
   const { data, error } = await supabase
     .from("profiles")
