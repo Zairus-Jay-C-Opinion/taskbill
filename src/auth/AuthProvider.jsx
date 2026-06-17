@@ -6,7 +6,8 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
+  // undefined = not yet fetched; null = fetch failed/no row; object = loaded
+  const [profile, setProfile] = useState(undefined);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async () => {
@@ -14,7 +15,8 @@ export function AuthProvider({ children }) {
       const p = await getProfile();
       setProfile(p);
     } catch {
-      setProfile(null);
+      // profiles table missing or row absent — treat as no username set
+      setProfile({ username: null });
     }
   }, []);
 
