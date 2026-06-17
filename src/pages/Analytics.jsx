@@ -4,23 +4,17 @@ import { useAuth } from "../auth/AuthProvider";
 import { getInvoices, getClients, getAllTasks } from "../lib/db";
 import { currencySymbol } from "../lib/currency";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 
-const STATUS_COLORS = { paid: "#0D0D0D", sent: "#6B6B6B", draft: "#D4D3CF" };
-
-function StatCard({ label, value }) {
+function RevenueTooltip({ active, payload, label, sym }) {
+  if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-2xl border border-[#E5E4E0] bg-white px-6 py-5">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-[#0D0D0D]">{value}</p>
+    <div className="rounded-xl border border-[#E5E4E0] bg-white px-3 py-2 text-xs shadow-sm">
+      <p className="text-[#6B6B6B]">{label}</p>
+      <p className="font-semibold text-[#0D0D0D]">{sym}{Number(payload[0].value).toFixed(2)}</p>
     </div>
   );
-}
-
-function SectionTitle({ children }) {
-  return <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-4">{children}</p>;
 }
 
 export default function Analytics() {
@@ -54,19 +48,16 @@ export default function Analytics() {
   if (loading) return <div className="mx-auto max-w-4xl px-6 py-10 text-sm text-[#6B6B6B]">Loading…</div>;
   if (error) return <div className="mx-auto max-w-4xl px-6 py-10 text-sm text-red-600">{error}</div>;
 
-  // ── Derived metrics ──────────────────────────────────────────────────────────
-
   const paidInvoices = invoices.filter((i) => i.status === "paid");
   const sentInvoices = invoices.filter((i) => i.status === "sent");
-
   const totalRevenue = paidInvoices.reduce((s, i) => s + i.total, 0);
   const outstanding = sentInvoices.reduce((s, i) => s + i.total, 0);
 
-  // Revenue by month — last 6 months
+  // Last 6 months revenue
   const now = new Date();
   const revenueByMonth = Array.from({ length: 6 }, (_, idx) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
-    const label = d.toLocaleString("default", { month: "short", year: "2-digit" });
+    const label = d.toLocaleString("default", { month: "short" });
     const total = paidInvoices
       .filter((i) => {
         const c = new Date(i.created_at);
@@ -76,111 +67,99 @@ export default function Analytics() {
     return { label, total };
   });
 
-  // Invoice status breakdown
-  const statusCounts = ["draft", "sent", "paid"].map((s) => ({
-    name: s.charAt(0).toUpperCase() + s.slice(1),
-    value: invoices.filter((i) => i.status === s).length,
-    color: STATUS_COLORS[s],
-  })).filter((s) => s.value > 0);
-
-  // Top 5 clients by paid revenue
+  // Top clients by paid revenue
+  const maxRevenue = Math.max(
+    ...clients.map((c) => paidInvoices.filter((i) => i.client_id === c.id).reduce((s, i) => s + i.total, 0)),
+    1
+  );
   const clientRevenue = clients
     .map((c) => ({
       name: c.name,
-      revenue: paidInvoices
-        .filter((i) => i.client_id === c.id)
-        .reduce((s, i) => s + i.total, 0),
+      revenue: paidInvoices.filter((i) => i.client_id === c.id).reduce((s, i) => s + i.total, 0),
     }))
     .filter((c) => c.revenue > 0)
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
 
-  const customTooltip = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div className="rounded-xl border border-[#E5E4E0] bg-white px-3 py-2 text-xs text-[#0D0D0D] shadow-sm">
-        <p className="font-semibold">{label}</p>
-        <p>{sym}{Number(payload[0].value).toFixed(2)}</p>
-      </div>
-    );
-  };
+  const hasRevenue = revenueByMonth.some((m) => m.total > 0);
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
-      <h2 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">Analytics</h2>
-      <p className="mt-1 text-sm text-[#6B6B6B]">Overview of your billing and task activity.</p>
+    <div className="mx-auto max-w-4xl px-6 py-12">
 
-      {/* ── Stat cards ── */}
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Total revenue" value={`${sym}${totalRevenue.toFixed(2)}`} />
-        <StatCard label="Outstanding" value={`${sym}${outstanding.toFixed(2)}`} />
-        <StatCard label="Clients" value={clients.length} />
-        <StatCard label="Total tasks" value={tasks.length} />
+      {/* ── Header ── */}
+      <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Analytics</p>
+      <h2 className="mt-2 text-4xl font-bold tracking-tight text-[#0D0D0D]">
+        {sym}{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </h2>
+      <p className="mt-1 text-sm text-[#6B6B6B]">Total revenue earned</p>
+
+      {/* ── Key metrics row ── */}
+      <div className="mt-8 grid grid-cols-3 divide-x divide-[#E5E4E0] border border-[#E5E4E0] rounded-2xl overflow-hidden bg-white">
+        {[
+          { label: "Outstanding", value: `${sym}${outstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+          { label: "Clients", value: clients.length },
+          { label: "Total tasks", value: tasks.length },
+        ].map(({ label, value }) => (
+          <div key={label} className="px-6 py-5">
+            <p className="text-xs text-[#6B6B6B]">{label}</p>
+            <p className="mt-1 text-xl font-bold text-[#0D0D0D]">{value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* ── Revenue by month ── */}
-      <div className="mt-10 rounded-2xl border border-[#E5E4E0] bg-white px-6 py-6">
-        <SectionTitle>Revenue by month</SectionTitle>
-        {revenueByMonth.every((m) => m.total === 0) ? (
-          <p className="text-sm text-[#6B6B6B]">No paid invoices yet.</p>
+      {/* ── Revenue trend ── */}
+      <div className="mt-10">
+        <div className="flex items-baseline justify-between mb-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Revenue — last 6 months</p>
+        </div>
+        {!hasRevenue ? (
+          <p className="text-sm text-[#6B6B6B]">No paid invoices in the last 6 months.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={revenueByMonth} barSize={32}>
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={revenueByMonth} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#0D0D0D" stopOpacity={0.08} />
+                  <stop offset="95%" stopColor="#0D0D0D" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#6B6B6B" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#6B6B6B" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${sym}${v}`} />
-              <Tooltip content={customTooltip} cursor={{ fill: "#F5F4F0" }} />
-              <Bar dataKey="total" fill="#0D0D0D" radius={[6, 6, 0, 0]} />
-            </BarChart>
+              <YAxis tick={{ fontSize: 11, fill: "#6B6B6B" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${sym}${v}`} width={60} />
+              <Tooltip content={<RevenueTooltip sym={sym} />} cursor={{ stroke: "#E5E4E0", strokeWidth: 1 }} />
+              <Area type="monotone" dataKey="total" stroke="#0D0D0D" strokeWidth={2} fill="url(#revenueGrad)" dot={false} activeDot={{ r: 4, fill: "#0D0D0D", strokeWidth: 0 }} />
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* ── Bottom row ── */}
-      <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-
-        {/* Invoice status breakdown */}
-        <div className="rounded-2xl border border-[#E5E4E0] bg-white px-6 py-6">
-          <SectionTitle>Invoice status</SectionTitle>
-          {statusCounts.length === 0 ? (
-            <p className="text-sm text-[#6B6B6B]">No invoices yet.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={statusCounts} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3}>
-                  {statusCounts.map((s) => <Cell key={s.name} fill={s.color} />)}
-                </Pie>
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: "#6B6B6B" }} />
-                <Tooltip formatter={(v) => [`${v} invoice${v !== 1 ? "s" : ""}`, ""]} contentStyle={{ fontSize: 11, borderRadius: 12, border: "1px solid #E5E4E0" }} />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
+      {/* ── Top clients ── */}
+      {clientRevenue.length > 0 && (
+        <div className="mt-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-5">Top clients</p>
+          <div className="space-y-5">
+            {clientRevenue.map((c, i) => (
+              <div key={c.name}>
+                <div className="flex items-baseline justify-between mb-2">
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-xs text-[#6B6B6B] w-4">{i + 1}</span>
+                    <span className="text-sm font-medium text-[#0D0D0D]">{c.name}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-[#0D0D0D]">
+                    {sym}{c.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="h-1 w-full rounded-full bg-[#E5E4E0]">
+                  <div
+                    className="h-1 rounded-full bg-[#0D0D0D] transition-all"
+                    style={{ width: `${(c.revenue / maxRevenue) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+      )}
 
-        {/* Top clients */}
-        <div className="rounded-2xl border border-[#E5E4E0] bg-white px-6 py-6">
-          <SectionTitle>Top clients by revenue</SectionTitle>
-          {clientRevenue.length === 0 ? (
-            <p className="text-sm text-[#6B6B6B]">No paid invoices yet.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={clientRevenue} layout="vertical" barSize={18}>
-                <XAxis type="number" tick={{ fontSize: 11, fill: "#6B6B6B" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${sym}${v}`} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#6B6B6B" }} axisLine={false} tickLine={false} width={80} />
-                <Tooltip content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  return (
-                    <div className="rounded-xl border border-[#E5E4E0] bg-white px-3 py-2 text-xs text-[#0D0D0D] shadow-sm">
-                      <p className="font-semibold">{payload[0].payload.name}</p>
-                      <p>{sym}{Number(payload[0].value).toFixed(2)}</p>
-                    </div>
-                  );
-                }} cursor={{ fill: "#F5F4F0" }} />
-                <Bar dataKey="revenue" fill="#0D0D0D" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
