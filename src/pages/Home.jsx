@@ -62,16 +62,28 @@ export default function Home() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
-      <p className="text-sm font-medium text-[#6B6B6B]">
-        Good to see you, {profile.username}.
-      </p>
-      <h1 className="mt-3 text-5xl font-bold tracking-tight text-[#0D0D0D] leading-tight">
-        Your work, tracked.<br />Your clients, billed.
-      </h1>
-      <p className="mt-5 text-lg text-[#6B6B6B] max-w-md">
-        Manage tasks, generate invoices, and get paid — all in one place.
-      </p>
+    <div
+      className="relative flex min-h-[calc(100vh-73px)] items-center justify-center"
+      style={{
+        backgroundImage: "url('https://i.pinimg.com/736x/a7/51/99/a751991b13838b80e6b9e59c7f815636.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Overlay so text stays legible over the bright photo */}
+      <div className="absolute inset-0 bg-white/60" />
+
+      <div className="relative z-10 text-center px-6 max-w-2xl">
+        <p className="text-sm font-medium tracking-widest uppercase text-[#6B6B6B]">
+          Good to see you, {profile.username}.
+        </p>
+        <h1 className="mt-4 text-6xl font-bold tracking-tight text-[#0D0D0D] leading-tight">
+          Your work, tracked.<br />Your clients, billed.
+        </h1>
+        <p className="mt-5 text-lg text-[#6B6B6B]">
+          Manage tasks, generate invoices, and get paid — all in one place.
+        </p>
+      </div>
     </div>
   );
 }
