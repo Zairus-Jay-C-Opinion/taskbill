@@ -9,8 +9,6 @@ const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold te
 export default function Settings() {
   const { profile, user, refreshProfile } = useAuth();
 
-  if (profile?.plan !== "business") return <Navigate to="/" replace />;
-
   const fileRef = useRef(null);
   const [logoPreview, setLogoPreview] = useState(profile?.logo_url || null);
   const [logoFile, setLogoFile] = useState(null);
@@ -18,6 +16,8 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+
+  if (profile?.plan !== "business") return <Navigate to="/" replace />;
 
   function handleFileChange(e) {
     const file = e.target.files?.[0];

@@ -27,8 +27,6 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  if (profile?.plan !== "business") return <Navigate to="/" replace />;
-
   useEffect(() => {
     async function load() {
       try {
@@ -44,6 +42,8 @@ export default function Analytics() {
     }
     load();
   }, []);
+
+  if (profile?.plan !== "business") return <Navigate to="/" replace />;
 
   if (loading) return <div className="mx-auto max-w-4xl px-6 py-10 text-sm text-[#6B6B6B]">Loading…</div>;
   if (error) return <div className="mx-auto max-w-4xl px-6 py-10 text-sm text-red-600">{error}</div>;
