@@ -98,7 +98,7 @@ export async function getInvoices() {
   // Derive total from associated tasks
   return data.map((inv) => ({
     ...inv,
-    total: inv.tasks.reduce((sum, t) => sum + Number(t.amount), 0),
+    total: (inv.tasks ?? []).reduce((sum, t) => sum + Number(t.amount), 0),
   }));
 }
 

@@ -81,8 +81,7 @@ export default function Invoices() {
     const next = NEXT_STATUS[invoice.status];
     if (!next) return;
 
-    // Block sending a ₱0 invoice
-    if (next === "sent" && invoice.total === 0) {
+    if (next === "sent" && !(invoice.total > 0)) {
       setError("Assign at least one task before marking this invoice as sent.");
       return;
     }
@@ -90,10 +89,8 @@ export default function Invoices() {
     setError("");
     setAdvancingId(invoice.id);
     try {
-      await updateInvoiceStatus(invoice.id, next);
-
-      // When marking as sent, generate a Stripe payment link
-      if (next === "sent" && invoice.total > 0) {
+      if (next === "sent") {
+        // Generate payment link FIRST — only update status if Stripe succeeds
         const res = await fetch("/api/stripe/create-payment-link", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -106,10 +103,14 @@ export default function Invoices() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Stripe error — check that STRIPE_SECRET_KEY is set in Vercel env vars");
+
+        await updateInvoiceStatus(invoice.id, "sent");
         await savePaymentLink(invoice.id, {
           paymentLink: data.url,
           paymentLinkId: data.paymentLinkId,
         });
+      } else {
+        await updateInvoiceStatus(invoice.id, next);
       }
 
       await load();
