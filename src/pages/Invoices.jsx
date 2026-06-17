@@ -223,13 +223,11 @@ export default function Invoices() {
                     {advancingId === inv.id ? "Generating link…" : `Mark as ${NEXT_STATUS[inv.status]}`}
                   </button>
                 )}
-                {inv.status === "draft" && (
-                  <button onClick={() => handleDelete(inv.id)}
-                    disabled={deletingId === inv.id}
-                    className="text-xs text-red-400 hover:text-red-600 underline underline-offset-4 transition-colors disabled:opacity-50 ml-auto">
-                    {deletingId === inv.id ? "Deleting…" : "Delete"}
-                  </button>
-                )}
+                <button onClick={() => handleDelete(inv.id)}
+                  disabled={deletingId === inv.id}
+                  className="text-xs text-red-400 hover:text-red-600 underline underline-offset-4 transition-colors disabled:opacity-50 ml-auto">
+                  {deletingId === inv.id ? "Deleting…" : "Delete"}
+                </button>
               </div>
 
               {/* Payment link */}
