@@ -55,7 +55,7 @@ export default function Invoices() {
   useEffect(() => {
     load();
 
-    // Realtime subscription — auto-refreshes when webhook marks invoice as paid
+    // Realtime — auto-refreshes when webhook marks invoice as paid
     const channel = supabase
       .channel("invoice-updates")
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "invoices" }, () => {
@@ -65,6 +65,14 @@ export default function Invoices() {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // Polling fallback — every 5 s while any invoice is "sent", in case Realtime isn't enabled yet
+  useEffect(() => {
+    const hasSent = invoices.some((inv) => inv.status === "sent");
+    if (!hasSent) return;
+    const id = setInterval(() => { loadRef.current(); }, 5000);
+    return () => clearInterval(id);
+  }, [invoices]);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -160,6 +168,28 @@ export default function Invoices() {
 
   const clientTasksFor = (clientId) => unbilledTasks.filter((t) => t.client_id === clientId);
 
+  async function handleQuickInvoice(clientId, tasks) {
+    setSubmitting(true);
+    setError("");
+    try {
+      const inv = await createInvoice({ clientId, dueDate: "" });
+      await Promise.all(tasks.map((t) => updateTaskInvoice(t.id, inv.id)));
+      await load();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // Clients that have unbilled tasks but no active draft invoice
+  const clientsWithDraft = new Set(
+    invoices.filter((inv) => inv.status === "draft").map((inv) => inv.client_id)
+  );
+  const unbilledByClient = clients
+    .map((c) => ({ client: c, tasks: clientTasksFor(c.id) }))
+    .filter(({ client, tasks }) => tasks.length > 0 && !clientsWithDraft.has(client.id));
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <h2 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">Invoices</h2>
@@ -184,6 +214,33 @@ export default function Invoices() {
             {submitting ? "Creating…" : "Create invoice"}
           </button>
         </form>
+      )}
+
+      {/* ── Unbilled tasks — quick invoice ── */}
+      {unbilledByClient.length > 0 && (
+        <div className="mt-6 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Unbilled tasks</p>
+          {unbilledByClient.map(({ client, tasks }) => (
+            <div key={client.id} className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+              <div>
+                <p className="text-sm font-semibold text-[#0D0D0D]">{client.name}</p>
+                <p className="mt-0.5 text-xs text-[#6B6B6B]">
+                  {tasks.map((t) => t.title).join(" · ")}
+                </p>
+                <p className="mt-0.5 text-xs text-[#6B6B6B]">
+                  ₱{tasks.reduce((s, t) => s + Number(t.amount), 0).toFixed(2)} total
+                </p>
+              </div>
+              <button
+                onClick={() => handleQuickInvoice(client.id, tasks)}
+                disabled={submitting}
+                className="shrink-0 ml-4 rounded-xl bg-[#0D0D0D] px-4 py-2 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity"
+              >
+                Create invoice
+              </button>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* ── Invoice list ── */}
