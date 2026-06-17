@@ -80,6 +80,7 @@ export default function Invoices() {
     const next = NEXT_STATUS[invoice.status];
     if (!next) return;
     setError("");
+    setSubmitting(true);
     try {
       await updateInvoiceStatus(invoice.id, next);
 
@@ -96,7 +97,7 @@ export default function Invoices() {
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to create payment link");
+        if (!res.ok) throw new Error(data.error || "Stripe error — check that STRIPE_SECRET_KEY is set in Vercel env vars");
         await savePaymentLink(invoice.id, {
           paymentLink: data.url,
           paymentLinkId: data.paymentLinkId,
@@ -106,6 +107,8 @@ export default function Invoices() {
       await load();
     } catch (e) {
       setError(e.message);
+    } finally {
+      setSubmitting(false);
     }
   }
 
