@@ -213,8 +213,34 @@ export default function Invoices() {
   }
 
   async function handleAiDraft(inv) {
+    if (!(inv.total > 0)) {
+      setError("Assign at least one task before drafting with AI.");
+      return;
+    }
     setDraftingId(inv.id);
     try {
+      let paymentLink = inv.payment_link;
+
+      // No payment link yet — generate one first then mark as sent
+      if (!paymentLink) {
+        const linkRes = await fetch("/api/stripe/create-payment-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            invoiceId: inv.id,
+            amount: inv.total,
+            clientName: inv.client?.name,
+            description: `Invoice for ${inv.client?.name}`,
+          }),
+        });
+        const linkData = await linkRes.json();
+        if (!linkRes.ok) throw new Error(linkData.error || "Failed to generate payment link");
+        await updateInvoiceStatus(inv.id, "sent");
+        await savePaymentLink(inv.id, { paymentLink: linkData.url, paymentLinkId: linkData.paymentLinkId });
+        paymentLink = linkData.url;
+        await load();
+      }
+
       const res = await fetch("/api/ai/draft-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -223,7 +249,8 @@ export default function Invoices() {
           tasks: inv.tasks,
           total: inv.total,
           currency: sym,
-          paymentLink: inv.payment_link ?? null,
+          paymentLink,
+          username: profile?.username,
         }),
       });
       const data = await res.json();
