@@ -41,6 +41,8 @@ export default function Invoices() {
   const [searchClient, setSearchClient] = useState("");
   const [draftingId, setDraftingId] = useState(null);
   const [copiedDraftId, setCopiedDraftId] = useState(null);
+  const [sendingDraftId, setSendingDraftId] = useState(null);
+  const [sentDraftIds, setSentDraftIds] = useState(new Set());
 
   const draftsKey = `taskbill-ai-drafts-${profile?.id}`;
   const collapsedKey = `taskbill-collapsed-drafts-${profile?.id}`;
@@ -231,6 +233,31 @@ export default function Invoices() {
       setError(e.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleSendDraft(inv) {
+    setSendingDraftId(inv.id);
+    setError("");
+    try {
+      const res = await fetch("/api/email/send-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: inv.client?.email,
+          draft: aiDrafts[inv.id],
+          fromName: profile?.username,
+          brandColor: profile?.brand_color,
+          logoUrl: profile?.logo_url,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send email");
+      setSentDraftIds((prev) => new Set([...prev, inv.id]));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSendingDraftId(null);
     }
   }
 
@@ -508,15 +535,29 @@ export default function Invoices() {
                   {!collapsedDrafts.has(inv.id) && (
                     <>
                       <p className="text-xs text-[#0D0D0D] leading-relaxed whitespace-pre-wrap">{aiDrafts[inv.id]}</p>
-                      <button type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(aiDrafts[inv.id]);
-                          setCopiedDraftId(inv.id);
-                          setTimeout(() => setCopiedDraftId(null), 2000);
-                        }}
-                        className={btnSubtle}>
-                        {copiedDraftId === inv.id ? "Copied!" : "Copy"}
-                      </button>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(aiDrafts[inv.id]);
+                            setCopiedDraftId(inv.id);
+                            setTimeout(() => setCopiedDraftId(null), 2000);
+                          }}
+                          className={btnSubtle}>
+                          {copiedDraftId === inv.id ? "Copied!" : "Copy"}
+                        </button>
+                        {inv.client?.email && (
+                          <button type="button"
+                            onClick={() => handleSendDraft(inv)}
+                            disabled={sendingDraftId === inv.id || sentDraftIds.has(inv.id)}
+                            className={btnSubtle}>
+                            {sendingDraftId === inv.id
+                              ? "Sending…"
+                              : sentDraftIds.has(inv.id)
+                              ? "Sent ✓"
+                              : `Send to ${inv.client.email}`}
+                          </button>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>

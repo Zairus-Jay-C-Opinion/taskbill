@@ -23,6 +23,7 @@ export const limitAI       = makeLimiter("rl:ai",        4, "1 m");  // 4 AI dra
 export const limitStripe   = makeLimiter("rl:stripe",   20, "1 h");  // 20 payment links / hr
 export const limitCheckout = makeLimiter("rl:checkout",  5, "1 h");  // 5 checkout sessions / hr
 export const limitDelete   = makeLimiter("rl:delete",    3, "1 h");  // 3 delete attempts / hr
+export const limitEmail    = makeLimiter("rl:email",    10, "1 h");  // 10 emails / hr
 
 export async function applyRateLimit(limiter, req, res) {
   if (!limiter) return true; // not configured — allow
