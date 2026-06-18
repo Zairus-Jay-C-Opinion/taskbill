@@ -287,10 +287,10 @@ export default function Invoices() {
   const clientsWithDraft = new Set(
     invoices.filter((inv) => inv.status === "draft").map((inv) => inv.client_id)
   );
-  // Only surface unbilled tasks for clients that have at least one paid invoice —
+  // Surface unbilled tasks for clients that have at least one sent or paid invoice —
   // new tasks with no invoice history use the Create Invoice form instead
   const clientsWithPaid = new Set(
-    invoices.filter((inv) => inv.status === "paid").map((inv) => inv.client_id)
+    invoices.filter((inv) => inv.status === "paid" || inv.status === "sent").map((inv) => inv.client_id)
   );
   const unbilledByClient = clients
     .map((c) => ({ client: c, tasks: clientTasksFor(c.id) }))

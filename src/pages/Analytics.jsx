@@ -28,6 +28,7 @@ export default function Analytics() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (profile?.plan !== "business") return;
     async function load() {
       try {
         const [inv, cli, tsk] = await Promise.all([getInvoices(), getClients(), getAllTasks()]);
@@ -41,7 +42,7 @@ export default function Analytics() {
       }
     }
     load();
-  }, []);
+  }, [profile?.plan]);
 
   if (profile?.plan !== "business") return <Navigate to="/" replace />;
 

@@ -142,7 +142,7 @@ export default function Home() {
       window.history.replaceState({}, "", "/");
       setPlanSuccess("You're all set! You can now use Tasks, Invoices, and all plan features.");
     }
-  }, []);
+  }, [refreshProfile]);
 
   if (loading || profile === undefined) return null;
 

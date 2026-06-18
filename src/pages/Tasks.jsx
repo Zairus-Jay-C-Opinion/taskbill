@@ -216,9 +216,9 @@ export default function Tasks() {
       {showClientForm ? (
         <form onSubmit={handleAddClient} className="mt-6 rounded-2xl border border-[#E5E4E0] bg-white p-6 space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">New client</p>
-          <input required placeholder="Name" value={clientForm.name}
+          <input id="client-name" name="client-name" required placeholder="Name" value={clientForm.name}
             onChange={(e) => setClientForm((f) => ({ ...f, name: e.target.value }))} className={inputCls} />
-          <input required type="email" placeholder="Email" value={clientForm.email}
+          <input id="client-email" name="client-email" required type="email" placeholder="Email" value={clientForm.email}
             onChange={(e) => setClientForm((f) => ({ ...f, email: e.target.value }))} className={inputCls} />
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={submitting} className={btnPrimary}>Save client</button>
@@ -238,11 +238,11 @@ export default function Tasks() {
           <select value={form.clientId} onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))} className={inputCls}>
             {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <input required placeholder="Title" value={form.title}
+          <input id="task-title" name="task-title" required placeholder="Title" value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className={inputCls} />
           <input placeholder="Description (optional)" value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className={inputCls} />
-          <input required type="number" min="0" step="0.01" placeholder={`Amount (${sym})`} value={form.amount}
+          <input id="task-amount" name="task-amount" required type="number" min="0" step="0.01" placeholder={`Amount (${sym})`} value={form.amount}
             onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className={inputCls} />
           <div>
             <label className="block text-xs text-[#6B6B6B] mb-1.5">Due date (optional)</label>

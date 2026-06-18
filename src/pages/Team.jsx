@@ -197,6 +197,8 @@ export default function Team() {
               <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-4">Invite a member</p>
               <form onSubmit={handleInvite} className="flex gap-3">
                 <input
+                  id="invite-email"
+                  name="invite-email"
                   type="email"
                   placeholder="colleague@email.com"
                   value={inviteEmail}
