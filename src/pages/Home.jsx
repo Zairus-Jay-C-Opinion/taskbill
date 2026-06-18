@@ -196,9 +196,15 @@ export default function Home() {
           <h1 className="text-3xl font-bold tracking-tight text-[#0D0D0D]">Welcome to TaskBill</h1>
           <p className="mt-2 text-[#6B6B6B]">What should we call you?</p>
           <form onSubmit={handleSaveUsername} className="mt-6 space-y-3">
-            <input required autoFocus placeholder="Your name" value={username}
+            <input
+              id="username"
+              name="username"
+              autoFocus
+              placeholder="Your name"
+              value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B]" />
+              className="w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B]"
+            />
             {promptError && <p className="text-sm text-red-600">{promptError}</p>}
             <button type="submit" disabled={saving || !username.trim()}
               className="w-full rounded-xl bg-[#0D0D0D] py-3 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity">

@@ -3,9 +3,12 @@ import { supabase } from "./supabaseClient";
 // ─── Profile ─────────────────────────────────────────────────────────────────
 
 export async function getProfile() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
+    .eq("id", user.id)
     .single();
   if (error) throw error;
   return data;
