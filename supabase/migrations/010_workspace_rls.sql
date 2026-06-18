@@ -11,6 +11,7 @@ drop policy if exists "user owns their clients"  on clients;
 drop policy if exists "user owns their tasks"    on tasks;
 drop policy if exists "user owns their invoices" on invoices;
 
+drop policy if exists "workspace access on clients" on clients;
 create policy "workspace access on clients"
 on clients for all
 using (
@@ -24,6 +25,7 @@ with check (
   or workspace_id in (select my_member_workspace_ids())
 );
 
+drop policy if exists "workspace access on tasks" on tasks;
 create policy "workspace access on tasks"
 on tasks for all
 using (
@@ -37,6 +39,7 @@ with check (
   or workspace_id in (select my_member_workspace_ids())
 );
 
+drop policy if exists "workspace access on invoices" on invoices;
 create policy "workspace access on invoices"
 on invoices for all
 using (
