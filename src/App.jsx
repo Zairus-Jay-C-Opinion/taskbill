@@ -10,6 +10,7 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Team from "./pages/Team";
 import Profile from "./pages/Profile";
+import Calendar from "./pages/Calendar";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         {/* Tasks and Invoices require a plan */}
         <Route path="tasks" element={<PlanGate><Tasks /></PlanGate>} />
         <Route path="invoices" element={<PlanGate><Invoices /></PlanGate>} />
+        <Route path="calendar" element={<PlanGate><Calendar /></PlanGate>} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="branding" element={<Settings />} />
         <Route path="team" element={<Team />} />

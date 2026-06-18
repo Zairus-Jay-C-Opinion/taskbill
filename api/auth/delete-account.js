@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { limitDelete, applyRateLimit } from "../lib/ratelimit.js";
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
@@ -9,6 +10,7 @@ export default async function handler(req, res) {
   if (req.method !== "DELETE") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+  if (!(await applyRateLimit(limitDelete, req, res))) return;
 
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token) return res.status(401).json({ error: "Unauthorized" });

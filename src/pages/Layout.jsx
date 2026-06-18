@@ -9,6 +9,7 @@ const APP_NAV = [
   { to: "/", label: "Home", end: true },
   { to: "/tasks", label: "Tasks" },
   { to: "/invoices", label: "Invoices" },
+  { to: "/calendar", label: "Calendar" },
 ];
 
 const INFO_NAV = [

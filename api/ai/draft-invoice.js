@@ -1,7 +1,10 @@
+import { limitAI, applyRateLimit } from "../lib/ratelimit.js";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+  if (!(await applyRateLimit(limitAI, req, res))) return;
 
   try {
     const { clientName, tasks, total, currency, paymentLink, username } = req.body;
