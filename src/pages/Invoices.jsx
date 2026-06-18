@@ -19,7 +19,7 @@ const btnSubtle = "rounded-lg border border-[#E5E4E0] bg-white px-3 py-1 text-xs
 const btnSubtleRed = "rounded-lg border border-red-100 bg-white px-3 py-1 text-xs font-medium text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors";
 
 export default function Invoices() {
-  const { profile } = useAuth();
+  const { profile, workspaceId } = useAuth();
   const sym = currencySymbol(profile?.currency);
 
   const [invoices, setInvoices] = useState([]);
@@ -123,7 +123,7 @@ export default function Invoices() {
     setSubmitting(true);
     setError("");
     try {
-      await createInvoice({ clientId: form.clientId, dueDate: form.dueDate });
+      await createInvoice({ clientId: form.clientId, dueDate: form.dueDate, workspaceId });
       setForm((f) => ({ ...f, dueDate: "" }));
       await load();
     } catch (e) {
@@ -223,7 +223,7 @@ export default function Invoices() {
     setSubmitting(true);
     setError("");
     try {
-      const inv = await createInvoice({ clientId, dueDate: "" });
+      const inv = await createInvoice({ clientId, dueDate: "", workspaceId });
       await Promise.all(tasks.map((t) => updateTaskInvoice(t.id, inv.id)));
       await load();
     } catch (e) {

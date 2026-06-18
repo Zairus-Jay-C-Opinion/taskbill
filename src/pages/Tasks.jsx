@@ -55,7 +55,7 @@ function checkDueNotifications(taskList, sym) {
 const FREE_CLIENT_LIMIT = 3;
 
 export default function Tasks() {
-  const { profile } = useAuth();
+  const { profile, workspaceId } = useAuth();
   const sym = currencySymbol(profile?.currency);
 
   const [tasks, setTasks] = useState([]);
@@ -101,7 +101,7 @@ export default function Tasks() {
     setSubmitting(true);
     setError("");
     try {
-      const client = await createClient(clientForm);
+      const client = await createClient({ ...clientForm, workspaceId });
       setClients((prev) => [...prev, client]);
       setForm((f) => ({ ...f, clientId: client.id }));
       setClientForm({ name: "", email: "" });
@@ -131,6 +131,7 @@ export default function Tasks() {
         description: form.description,
         amount: parseFloat(form.amount) || 0,
         dueDate: form.dueDate,
+        workspaceId,
       });
       await load();
       setForm((f) => ({ ...f, title: "", description: "", amount: "", dueDate: "" }));

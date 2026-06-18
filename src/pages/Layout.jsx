@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { saveCurrency } from "../lib/db";
+import { saveCurrency, acceptInvite } from "../lib/db";
 import { CURRENCIES, currencySymbol } from "../lib/currency";
 
 const APP_NAV = [
@@ -15,9 +16,23 @@ const INFO_NAV = [
 ];
 
 export default function Layout() {
-  const { profile, user, signOut, refreshProfile } = useAuth();
+  const { profile, user, signOut, refreshProfile, pendingInvite, refreshWorkspace } = useAuth();
   const displayName = profile?.username || user?.email?.split("@")[0] || "";
   const currentCurrency = profile?.currency ?? "PHP";
+  const [acceptingInvite, setAcceptingInvite] = useState(false);
+
+  async function handleAcceptInvite() {
+    if (!pendingInvite) return;
+    setAcceptingInvite(true);
+    try {
+      await acceptInvite(pendingInvite.id);
+      await refreshWorkspace();
+    } catch {
+      // silent — user can retry
+    } finally {
+      setAcceptingInvite(false);
+    }
+  }
 
   async function handleCurrencyChange(e) {
     const currency = e.target.value;
@@ -50,6 +65,12 @@ export default function Layout() {
                     `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
                   }>
                   Analytics
+                </NavLink>
+                <NavLink to="/team"
+                  className={({ isActive }) =>
+                    `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
+                  }>
+                  Team
                 </NavLink>
                 <NavLink to="/branding"
                   className={({ isActive }) =>
@@ -90,6 +111,22 @@ export default function Layout() {
           </button>
         </div>
       </header>
+
+      {/* ── Pending invite banner ── */}
+      {pendingInvite && (
+        <div className="border-b border-amber-200 bg-amber-50 px-6 py-3 flex items-center justify-between gap-4">
+          <p className="text-sm text-[#0D0D0D]">
+            <span className="font-semibold">{pendingInvite.workspace?.name}</span> has invited you to collaborate.
+          </p>
+          <button
+            onClick={handleAcceptInvite}
+            disabled={acceptingInvite}
+            className="shrink-0 rounded-lg bg-[#0D0D0D] px-4 py-1.5 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity"
+          >
+            {acceptingInvite ? "Accepting…" : "Accept invite"}
+          </button>
+        </div>
+      )}
 
       <main className="flex-1">
         <Outlet />

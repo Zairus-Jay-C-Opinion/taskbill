@@ -94,6 +94,100 @@ export async function upsertProfile({ id, username }) {
   return data;
 }
 
+// ─── Workspace ───────────────────────────────────────────────────────────────
+
+export async function getWorkspace() {
+  // Try as owner first
+  const { data: owned } = await supabase
+    .from("workspaces")
+    .select("*")
+    .eq("owner_id", (await supabase.auth.getUser()).data.user.id)
+    .maybeSingle();
+  if (owned) return { workspace: owned, role: "owner" };
+
+  // Try as accepted member
+  const { data: membership } = await supabase
+    .from("workspace_members")
+    .select("*, workspace:workspaces(*)")
+    .eq("user_id", (await supabase.auth.getUser()).data.user.id)
+    .eq("status", "accepted")
+    .maybeSingle();
+  if (membership) return { workspace: membership.workspace, role: "member" };
+
+  return null;
+}
+
+export async function getOrCreateWorkspace(userId, name) {
+  const existing = await getWorkspace();
+  if (existing) return existing;
+
+  // Create workspace and backfill existing data
+  const { data: workspace, error } = await supabase
+    .from("workspaces")
+    .insert({ name, owner_id: userId })
+    .select()
+    .single();
+  if (error) throw error;
+
+  await Promise.all([
+    supabase.from("clients").update({ workspace_id: workspace.id }).eq("user_id", userId),
+    supabase.from("tasks").update({ workspace_id: workspace.id }).eq("user_id", userId),
+    supabase.from("invoices").update({ workspace_id: workspace.id }).eq("user_id", userId),
+  ]);
+
+  return { workspace, role: "owner" };
+}
+
+export async function getWorkspaceMembers(workspaceId) {
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .order("created_at");
+  if (error) throw error;
+  return data;
+}
+
+export async function inviteMember(workspaceId, email) {
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .insert({ workspace_id: workspaceId, invited_email: email.toLowerCase().trim() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function removeMember(memberId) {
+  const { error } = await supabase
+    .from("workspace_members")
+    .delete()
+    .eq("id", memberId);
+  if (error) throw error;
+}
+
+export async function getPendingInvite() {
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .select("*, workspace:workspaces(name, owner_id)")
+    .eq("status", "pending")
+    .maybeSingle();
+  if (error || !data) return null;
+  return data;
+}
+
+export async function acceptInvite(memberId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .update({ status: "accepted", user_id: user.id })
+    .eq("id", memberId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 // ─── Clients ─────────────────────────────────────────────────────────────────
 
 export async function getClients() {
@@ -105,10 +199,10 @@ export async function getClients() {
   return data;
 }
 
-export async function createClient({ name, email }) {
+export async function createClient({ name, email, workspaceId }) {
   const { data, error } = await supabase
     .from("clients")
-    .insert({ name, email })
+    .insert({ name, email, workspace_id: workspaceId ?? null })
     .select()
     .single();
   if (error) throw error;
@@ -144,10 +238,10 @@ export async function getAllTasks() {
   return data;
 }
 
-export async function createTask({ clientId, title, description, amount, dueDate }) {
+export async function createTask({ clientId, title, description, amount, dueDate, workspaceId }) {
   const { data, error } = await supabase
     .from("tasks")
-    .insert({ client_id: clientId, title, description, amount, due_date: dueDate || null })
+    .insert({ client_id: clientId, title, description, amount, due_date: dueDate || null, workspace_id: workspaceId ?? null })
     .select()
     .single();
   if (error) throw error;
@@ -203,10 +297,10 @@ export async function deleteInvoice(invoiceId) {
   if (error) throw error;
 }
 
-export async function createInvoice({ clientId, dueDate }) {
+export async function createInvoice({ clientId, dueDate, workspaceId }) {
   const { data, error } = await supabase
     .from("invoices")
-    .insert({ client_id: clientId, due_date: dueDate || null })
+    .insert({ client_id: clientId, due_date: dueDate || null, workspace_id: workspaceId ?? null })
     .select()
     .single();
   if (error) throw error;

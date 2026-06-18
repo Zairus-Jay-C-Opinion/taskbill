@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { getProfile } from "../lib/db";
+import { getProfile, getWorkspace, getPendingInvite } from "../lib/db";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
-  // undefined = not yet fetched; null = fetch failed/no row; object = loaded
   const [profile, setProfile] = useState(undefined);
+  const [workspace, setWorkspace] = useState(undefined); // { workspace, role } | null | undefined
+  const [pendingInvite, setPendingInvite] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async () => {
@@ -15,37 +16,60 @@ export function AuthProvider({ children }) {
       const p = await getProfile();
       setProfile(p);
     } catch {
-      // profiles table missing or row absent — treat as no username set
       setProfile({ username: null });
+    }
+  }, []);
+
+  const fetchWorkspace = useCallback(async () => {
+    try {
+      const w = await getWorkspace();
+      setWorkspace(w ?? null);
+      if (!w) {
+        const invite = await getPendingInvite();
+        setPendingInvite(invite);
+      } else {
+        setPendingInvite(null);
+      }
+    } catch {
+      setWorkspace(null);
     }
   }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
-      if (data.session) await fetchProfile();
+      if (data.session) {
+        await Promise.all([fetchProfile(), fetchWorkspace()]);
+      }
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
       if (event === "SIGNED_IN" && newSession) {
-        await fetchProfile();
+        await Promise.all([fetchProfile(), fetchWorkspace()]);
       }
       if (event === "SIGNED_OUT") {
         setProfile(null);
+        setWorkspace(null);
+        setPendingInvite(null);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [fetchProfile, fetchWorkspace]);
 
   const value = {
     session,
     user: session?.user ?? null,
     profile,
+    workspace: workspace?.workspace ?? null,
+    workspaceRole: workspace?.role ?? null,
+    workspaceId: workspace?.workspace?.id ?? null,
+    pendingInvite,
     loading,
     refreshProfile: fetchProfile,
+    refreshWorkspace: fetchWorkspace,
     signOut: () => supabase.auth.signOut(),
   };
 
