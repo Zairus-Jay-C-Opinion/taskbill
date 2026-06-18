@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { getOrCreateWorkspace, getWorkspaceMembers, inviteMember, removeMember } from "../lib/db";
 import { Skeleton } from "../components/Skeleton";
+import Avatar from "../components/Avatar";
 
 const inputCls = "w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors";
 const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity";
@@ -138,12 +139,15 @@ export default function Team() {
               <div className="mt-1 rounded-2xl border border-[#E5E4E0] bg-white divide-y divide-[#E5E4E0] overflow-hidden">
                 {/* Owner row */}
                 <div className="flex items-center justify-between px-5 py-4">
-                  <div>
-                    <p className="text-sm font-medium text-[#0D0D0D]">
-                      {profile?.username || user?.email}
-                      <span className="ml-2 text-xs text-[#6B6B6B]">(you)</span>
-                    </p>
-                    <p className="text-xs text-[#6B6B6B]">{user?.email}</p>
+                  <div className="flex items-center gap-3">
+                    <Avatar url={profile?.avatar_url} name={profile?.username || user?.email} size="sm" />
+                    <div>
+                      <p className="text-sm font-medium text-[#0D0D0D]">
+                        {profile?.username || user?.email}
+                        <span className="ml-2 text-xs text-[#6B6B6B]">(you)</span>
+                      </p>
+                      <p className="text-xs text-[#6B6B6B]">{user?.email}</p>
+                    </div>
                   </div>
                   <span className="rounded-full bg-[#0D0D0D] px-3 py-0.5 text-xs font-medium text-white">owner</span>
                 </div>
@@ -153,11 +157,14 @@ export default function Team() {
                 ) : (
                   accepted.map((m) => (
                     <div key={m.id} className="flex items-center justify-between px-5 py-4">
-                      <div>
-                        <p className="text-sm font-medium text-[#0D0D0D]">
-                          {m.username || m.invited_email}
-                        </p>
-                        <p className="text-xs text-[#6B6B6B]">{m.invited_email}</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar url={m.avatar_url} name={m.username || m.invited_email} size="sm" />
+                        <div>
+                          <p className="text-sm font-medium text-[#0D0D0D]">
+                            {m.username || m.invited_email}
+                          </p>
+                          <p className="text-xs text-[#6B6B6B]">{m.invited_email}</p>
+                        </div>
                       </div>
                       {workspaceRole === "owner" && (
                         <button

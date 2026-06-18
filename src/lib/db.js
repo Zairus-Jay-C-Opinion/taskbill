@@ -40,6 +40,28 @@ export async function getInvoiceCountThisWeek() {
   return count ?? 0;
 }
 
+export async function uploadAvatar(userId, file) {
+  const ext = file.name.split(".").pop();
+  const path = `${userId}/avatar.${ext}`;
+  const { error } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function saveAvatar(userId, avatarUrl) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: avatarUrl })
+    .eq("id", userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function uploadLogo(userId, file) {
   const ext = file.name.split(".").pop();
   const path = `${userId}/logo.${ext}`;
@@ -156,12 +178,13 @@ export async function getWorkspaceMembers(workspaceId) {
   if (userIds.length > 0) {
     const { data: memberProfiles } = await supabase
       .from("profiles")
-      .select("id, username")
+      .select("id, username, avatar_url")
       .in("id", userIds);
     const profileMap = Object.fromEntries((memberProfiles ?? []).map((p) => [p.id, p]));
     return data.map((m) => ({
       ...m,
-      username: m.user_id ? (profileMap[m.user_id]?.username ?? null) : null,
+      username:   m.user_id ? (profileMap[m.user_id]?.username   ?? null) : null,
+      avatar_url: m.user_id ? (profileMap[m.user_id]?.avatar_url ?? null) : null,
     }));
   }
 

@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { saveCurrency, acceptInvite } from "../lib/db";
 import { CURRENCIES, currencySymbol } from "../lib/currency";
+import Avatar from "../components/Avatar";
 
 const APP_NAV = [
   { to: "/", label: "Home", end: true },
@@ -98,9 +99,10 @@ export default function Layout() {
           {displayName && (
             <NavLink to="/profile"
               className={({ isActive }) =>
-                `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
+                `flex items-center gap-2 rounded-full border px-3 py-1.5 transition-colors ${isActive ? "border-[#0D0D0D] bg-[#0D0D0D] text-white" : "border-[#E5E4E0] bg-white text-[#0D0D0D] hover:bg-[#F5F4F0]"}`
               }>
-              {displayName}
+              <Avatar url={profile?.avatar_url} name={displayName} size="xs" />
+              <span className="text-sm font-medium">{displayName}</span>
             </NavLink>
           )}
           <select

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { supabase } from "../lib/supabaseClient";
-import { upsertProfile } from "../lib/db";
+import { upsertProfile, uploadAvatar, saveAvatar } from "../lib/db";
+import Avatar from "../components/Avatar";
 
 const PASSWORD_RULES = [
   { id: "length",  label: "At least 8 characters",  test: (p) => p.length >= 8 },
@@ -29,6 +30,12 @@ export default function Profile() {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
 
+  // ── Avatar
+  const avatarRef = useRef(null);
+  const [avatarPreview, setAvatarPreview] = useState(profile?.avatar_url || null);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+
   // ── Account
   const [username, setUsername] = useState(profile?.username || "");
   const [savingUsername, setSavingUsername] = useState(false);
@@ -49,6 +56,38 @@ export default function Profile() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [showDeleteZone, setShowDeleteZone] = useState(false);
+
+  async function handleAvatarChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarPreview(URL.createObjectURL(file));
+    setSavingAvatar(true);
+    setAvatarError("");
+    try {
+      const url = await uploadAvatar(user.id, file);
+      await saveAvatar(user.id, url);
+      await refreshProfile();
+    } catch (err) {
+      setAvatarError(err.message);
+      setAvatarPreview(profile?.avatar_url || null);
+    } finally {
+      setSavingAvatar(false);
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    setSavingAvatar(true);
+    setAvatarError("");
+    try {
+      await saveAvatar(user.id, null);
+      await refreshProfile();
+      setAvatarPreview(null);
+    } catch (err) {
+      setAvatarError(err.message);
+    } finally {
+      setSavingAvatar(false);
+    }
+  }
 
   async function handleSaveUsername(e) {
     e.preventDefault();
@@ -133,6 +172,39 @@ export default function Profile() {
 
       {/* ── Account ── */}
       <Section title="Account">
+        {/* Avatar */}
+        <div className="flex items-center gap-5 pb-2 border-b border-[#F5F4F0]">
+          <div className="relative">
+            <Avatar url={avatarPreview} name={profile?.username} size="lg" />
+            {savingAvatar && (
+              <div className="absolute inset-0 rounded-full bg-white/70 flex items-center justify-center">
+                <span className="text-xs text-[#6B6B6B]">…</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            <button
+              type="button"
+              disabled={savingAvatar}
+              onClick={() => avatarRef.current?.click()}
+              className="rounded-lg border border-[#E5E4E0] bg-white px-3 py-1.5 text-xs font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] disabled:opacity-40 transition-colors">
+              {avatarPreview ? "Change photo" : "Upload photo"}
+            </button>
+            {avatarPreview && (
+              <button
+                type="button"
+                disabled={savingAvatar}
+                onClick={handleRemoveAvatar}
+                className="block rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors">
+                Remove photo
+              </button>
+            )}
+            {avatarError && <p className="text-xs text-red-600">{avatarError}</p>}
+            <p className="text-xs text-[#6B6B6B]">PNG or JPG. Max 2 MB.</p>
+          </div>
+        </div>
+
         <div>
           <p className="text-xs text-[#6B6B6B] mb-1">Email</p>
           <p className="text-sm font-medium text-[#0D0D0D]">{user?.email}</p>
