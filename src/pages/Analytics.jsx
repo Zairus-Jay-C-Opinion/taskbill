@@ -118,7 +118,7 @@ export default function Analytics() {
       {/* ── Key metrics row ── */}
       <div className="mt-8 grid grid-cols-3 divide-x divide-[#E5E4E0] border border-[#E5E4E0] rounded-2xl overflow-hidden bg-white">
         {[
-          { label: "Outstanding", value: `${sym}${outstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+          { label: "Receivable", value: `${sym}${outstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
           { label: "Clients", value: clients.length },
           { label: "Total tasks", value: tasks.length },
         ].map(({ label, value }) => (
