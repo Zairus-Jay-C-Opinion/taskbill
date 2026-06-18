@@ -6,6 +6,7 @@ import { currencySymbol } from "../lib/currency";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { Skeleton } from "../components/Skeleton";
 
 function RevenueTooltip({ active, payload, label, sym }) {
   if (!active || !payload?.length) return null;
@@ -46,7 +47,27 @@ export default function Analytics() {
 
   if (profile?.plan !== "business") return <Navigate to="/" replace />;
 
-  if (loading) return <div className="mx-auto max-w-4xl px-6 py-10 text-sm text-[#6B6B6B]">Loading…</div>;
+  if (loading) return (
+    <div className="mx-auto max-w-4xl px-6 py-12 space-y-8">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-3 w-36" />
+      </div>
+      <div className="grid grid-cols-3 divide-x divide-[#E5E4E0] border border-[#E5E4E0] rounded-2xl overflow-hidden bg-white">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="px-6 py-5 space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-3 w-40" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+    </div>
+  );
   if (error) return <div className="mx-auto max-w-4xl px-6 py-10 text-sm text-red-600">{error}</div>;
 
   const paidInvoices = invoices.filter((i) => i.status === "paid");

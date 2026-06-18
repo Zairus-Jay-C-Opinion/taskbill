@@ -96,7 +96,12 @@ export default function Layout() {
         </div>
         <div className="flex items-center gap-4">
           {displayName && (
-            <span className="text-sm text-[#6B6B6B]">{displayName}</span>
+            <NavLink to="/profile"
+              className={({ isActive }) =>
+                `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
+              }>
+              {displayName}
+            </NavLink>
           )}
           <select
             value={currentCurrency}

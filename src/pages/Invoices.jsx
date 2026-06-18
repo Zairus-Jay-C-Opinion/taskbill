@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { getClients, getInvoices, getTasks, createInvoice, updateTaskInvoice, updateInvoiceStatus, savePaymentLink, deleteInvoice, getInvoiceCountThisWeek } from "../lib/db";
 import { useAuth } from "../auth/AuthProvider";
 import { currencySymbol } from "../lib/currency";
+import { Skeleton } from "../components/Skeleton";
 
 const STATUS_STYLES = {
   draft: "bg-stone-100 text-stone-600",
@@ -408,7 +409,23 @@ export default function Invoices() {
 
       {/* ── Invoice list ── */}
       <div className="mt-4 space-y-4">
-        {loading && <p className="text-sm text-[#6B6B6B]">Loading…</p>}
+        {loading && [1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl border border-[#E5E4E0] bg-white overflow-hidden">
+            <div className="flex items-start justify-between px-6 py-5">
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-2/5" />
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-4 w-14 rounded-full" />
+              </div>
+            </div>
+            <div className="border-t border-[#E5E4E0] px-6 py-4 bg-[#F5F4F0]">
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          </div>
+        ))}
         {!loading && displayedInvoices.length === 0 && (
           <p className="text-sm text-[#6B6B6B]">{invoices.length === 0 ? "No invoices yet." : "No invoices match."}</p>
         )}

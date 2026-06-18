@@ -2,6 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
+const PASSWORD_RULES = [
+  { id: "length",    label: "At least 8 characters",   test: (p) => p.length >= 8 },
+  { id: "upper",     label: "One uppercase letter",     test: (p) => /[A-Z]/.test(p) },
+  { id: "number",    label: "One number",               test: (p) => /[0-9]/.test(p) },
+  { id: "special",   label: "One special character",    test: (p) => /[^A-Za-z0-9]/.test(p) },
+];
+
+function allRulesMet(password) {
+  return PASSWORD_RULES.every((r) => r.test(password));
+}
+
 function EyeIcon({ open }) {
   return open ? (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -42,6 +53,12 @@ export default function Login() {
     setSubmitting(false);
 
     if (authError) { setError(authError.message); return; }
+
+    if (isSignup && !allRulesMet(password)) {
+      setError("Password doesn't meet all requirements.");
+      setSubmitting(false);
+      return;
+    }
 
     if (isSignup) {
       // Always sign out and return to sign-in — prevents auto-login when
@@ -88,7 +105,8 @@ export default function Login() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                required minLength={6}
+                required
+                minLength={isSignup ? 8 : 6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={inputCls + " pr-11"}
@@ -102,6 +120,19 @@ export default function Login() {
                 <EyeIcon open={showPassword} />
               </button>
             </div>
+            {isSignup && password.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {PASSWORD_RULES.map((rule) => {
+                  const met = rule.test(password);
+                  return (
+                    <li key={rule.id} className={`flex items-center gap-1.5 text-xs transition-colors ${met ? "text-emerald-600" : "text-[#6B6B6B]"}`}>
+                      <span>{met ? "✓" : "·"}</span>
+                      {rule.label}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

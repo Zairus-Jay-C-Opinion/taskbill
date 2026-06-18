@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { getOrCreateWorkspace, getWorkspaceMembers, inviteMember, removeMember } from "../lib/db";
+import { Skeleton } from "../components/Skeleton";
 
 const inputCls = "w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors";
 const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity";
@@ -97,7 +98,14 @@ export default function Team() {
       )}
 
       {loading ? (
-        <p className="mt-8 text-sm text-[#6B6B6B]">Setting up workspace…</p>
+        <div className="mt-8 space-y-4">
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-14 w-full rounded-2xl" />
+          </div>
+        </div>
       ) : (
         <>
           {/* ── Workspace info ── */}

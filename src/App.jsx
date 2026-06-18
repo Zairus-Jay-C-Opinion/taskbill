@@ -9,6 +9,7 @@ import Invoices from "./pages/Invoices";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Team from "./pages/Team";
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="analytics" element={<Analytics />} />
         <Route path="branding" element={<Settings />} />
         <Route path="team" element={<Team />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
     </Routes>
   );

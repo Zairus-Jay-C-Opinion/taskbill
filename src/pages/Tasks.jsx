@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getClients, getTasks, createTask, createClient, deleteTask, getTaskCountThisMonth } from "../lib/db";
 import { useAuth } from "../auth/AuthProvider";
 import { currencySymbol } from "../lib/currency";
+import { Skeleton } from "../components/Skeleton";
 
 const inputCls = "w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors";
 const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity";
@@ -281,7 +282,18 @@ export default function Tasks() {
 
       {/* ── Task list ── */}
       <div className="mt-4 space-y-3">
-        {loading && <p className="text-sm text-[#6B6B6B]">Loading…</p>}
+        {loading && [1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl border border-[#E5E4E0] bg-white px-6 py-5">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/5" />
+                <Skeleton className="h-3 w-3/5" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
+              <Skeleton className="h-4 w-16 ml-4 shrink-0" />
+            </div>
+          </div>
+        ))}
         {!loading && tasks.length === 0 && (
           <p className="text-sm text-[#6B6B6B]">No unbilled tasks yet.</p>
         )}
