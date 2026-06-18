@@ -19,7 +19,7 @@ function makeLimiter(prefix, requests, window) {
 }
 
 // Per-route limits — all keyed by client IP
-export const limitAI       = makeLimiter("rl:ai",       10, "1 m");  // 10 AI drafts / min
+export const limitAI       = makeLimiter("rl:ai",        4, "1 m");  // 4 AI drafts / min (Gemini free tier caps at 5)
 export const limitStripe   = makeLimiter("rl:stripe",   20, "1 h");  // 20 payment links / hr
 export const limitCheckout = makeLimiter("rl:checkout",  5, "1 h");  // 5 checkout sessions / hr
 export const limitDelete   = makeLimiter("rl:delete",    3, "1 h");  // 3 delete attempts / hr
