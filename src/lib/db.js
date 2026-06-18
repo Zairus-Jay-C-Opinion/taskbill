@@ -97,19 +97,20 @@ export async function upsertProfile({ id, username }) {
 // ─── Workspace ───────────────────────────────────────────────────────────────
 
 export async function getWorkspace() {
-  // Try as owner first
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data: owned } = await supabase
     .from("workspaces")
     .select("*")
-    .eq("owner_id", (await supabase.auth.getUser()).data.user.id)
+    .eq("owner_id", user.id)
     .maybeSingle();
   if (owned) return { workspace: owned, role: "owner" };
 
-  // Try as accepted member
   const { data: membership } = await supabase
     .from("workspace_members")
     .select("*, workspace:workspaces(*)")
-    .eq("user_id", (await supabase.auth.getUser()).data.user.id)
+    .eq("user_id", user.id)
     .eq("status", "accepted")
     .maybeSingle();
   if (membership) return { workspace: membership.workspace, role: "member" };
@@ -118,6 +119,7 @@ export async function getWorkspace() {
 }
 
 export async function getOrCreateWorkspace(userId, name) {
+  if (!userId) throw new Error("Not authenticated");
   const existing = await getWorkspace();
   if (existing) return existing;
 
@@ -178,6 +180,7 @@ export async function getPendingInvite() {
 
 export async function acceptInvite(memberId) {
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("workspace_members")
     .update({ status: "accepted", user_id: user.id })
