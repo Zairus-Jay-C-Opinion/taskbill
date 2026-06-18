@@ -24,6 +24,7 @@ export default function Settings() {
     if (!file) return;
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
+    setSaved(false);
   }
 
   async function handleSave() {
@@ -39,7 +40,6 @@ export default function Settings() {
       await refreshProfile();
       setLogoFile(null);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -115,7 +115,7 @@ export default function Settings() {
               id="colorPicker"
               type="color"
               value={brandColor}
-              onChange={(e) => setBrandColor(e.target.value)}
+              onChange={(e) => { setBrandColor(e.target.value); setSaved(false); }}
               className="opacity-0 w-full h-full cursor-pointer"
             />
           </div>
@@ -124,7 +124,7 @@ export default function Settings() {
             value={brandColor}
             onChange={(e) => {
               const val = e.target.value;
-              if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) setBrandColor(val);
+              if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) { setBrandColor(val); setSaved(false); }
             }}
             maxLength={7}
             className="w-32 rounded-xl border border-[#E5E4E0] bg-white px-4 py-2.5 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] font-mono transition-colors"
