@@ -43,11 +43,16 @@ export default function Login() {
 
     if (authError) { setError(authError.message); return; }
 
-    if (isSignup && !data.session) {
-      setMessage("Check your email to confirm your account, then sign in.");
+    if (isSignup) {
+      // Always sign out and return to sign-in — prevents auto-login when
+      // email confirmation is disabled in Supabase.
+      await supabase.auth.signOut();
       setEmail("");
       setPassword("");
       setMode("signin");
+      setMessage(data.session
+        ? "Account created! Sign in to continue."
+        : "Check your email to confirm your account, then sign in.");
       return;
     }
 

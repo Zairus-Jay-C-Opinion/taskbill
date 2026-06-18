@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { upsertProfile, savePlan } from "../lib/db";
 
 function useReveal() {
-  const ref = useRef(null);
-  useEffect(() => {
-    const el = ref.current;
+  // Callback ref fires whenever the element mounts — safe even when the
+  // element is conditionally rendered (e.g. hidden behind a username prompt).
+  return useCallback((el) => {
     if (!el) return;
     el.style.transition = "opacity 0.7s ease, transform 0.7s ease";
     const observer = new IntersectionObserver(
@@ -20,9 +20,7 @@ function useReveal() {
       { threshold: 0.1 }
     );
     observer.observe(el);
-    return () => observer.disconnect();
   }, []);
-  return ref;
 }
 
 function ScrollToTop() {
