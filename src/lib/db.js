@@ -168,14 +168,25 @@ export async function removeMember(memberId) {
   if (error) throw error;
 }
 
-export async function getPendingInvite() {
+export async function getPendingInvites() {
   const { data, error } = await supabase
     .from("workspace_members")
-    .select("*, workspace:workspaces(name, owner_id)")
-    .eq("status", "pending")
-    .maybeSingle();
-  if (error || !data) return null;
-  return data;
+    .select("*, workspace:workspaces(id, name, owner_id)")
+    .eq("status", "pending");
+  if (error || !data?.length) return [];
+
+  // Fetch owner usernames
+  const ownerIds = [...new Set(data.map((m) => m.workspace?.owner_id).filter(Boolean))];
+  const { data: ownerProfiles } = await supabase
+    .from("profiles")
+    .select("id, username")
+    .in("id", ownerIds);
+  const profileMap = Object.fromEntries((ownerProfiles ?? []).map((p) => [p.id, p]));
+
+  return data.map((m) => ({
+    ...m,
+    ownerUsername: profileMap[m.workspace?.owner_id]?.username ?? null,
+  }));
 }
 
 export async function acceptInvite(memberId) {

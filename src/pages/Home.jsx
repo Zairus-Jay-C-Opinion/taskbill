@@ -121,7 +121,8 @@ export default function Home() {
   const [username, setUsername] = useState("");
   const [saving, setSaving] = useState(false);
   const [promptError, setPromptError] = useState("");
-  const [selectingPlan, setSelectingPlan] = useState(null); // plan key being processed
+  const [selectingPlan, setSelectingPlan] = useState(null);
+  const [planSuccess, setPlanSuccess] = useState("");
 
   // Scroll to hash section on mount (supports /#about and /#plans nav links)
   useEffect(() => {
@@ -139,6 +140,7 @@ export default function Home() {
     if (params.get("upgraded") === "true") {
       refreshProfile();
       window.history.replaceState({}, "", "/");
+      setPlanSuccess("You're all set! You can now use Tasks, Invoices, and all plan features.");
     }
   }, []);
 
@@ -169,6 +171,7 @@ export default function Home() {
         await savePlan(user.id, "free");
         await refreshProfile();
         setSelectingPlan(null);
+        setPlanSuccess("You're on the Free plan! You can now start using Tasks and Invoices.");
       } else {
         const res = await fetch("/api/stripe/create-checkout-session", {
           method: "POST",
@@ -265,7 +268,11 @@ export default function Home() {
           <p className="mt-3 text-[#6B6B6B]">Start free. Upgrade when you're ready.</p>
 
           {/* Plan status */}
-          {profile.plan ? (
+          {planSuccess ? (
+            <p className="mt-4 inline-block rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+              {planSuccess}
+            </p>
+          ) : profile.plan ? (
             <p className="mt-4 text-sm text-[#6B6B6B]">
               Your current plan: <span className="font-semibold text-[#0D0D0D] capitalize">{profile.plan}</span>
             </p>

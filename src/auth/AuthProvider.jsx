@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { getProfile, getWorkspace, getPendingInvite } from "../lib/db";
+import { getProfile, getWorkspace, getPendingInvites } from "../lib/db";
 
 const AuthContext = createContext(null);
 
@@ -8,7 +8,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(undefined);
   const [workspace, setWorkspace] = useState(undefined); // { workspace, role } | null | undefined
-  const [pendingInvite, setPendingInvite] = useState(null);
+  const [pendingInvites, setPendingInvites] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async () => {
@@ -25,10 +25,10 @@ export function AuthProvider({ children }) {
       const w = await getWorkspace();
       setWorkspace(w ?? null);
       if (!w) {
-        const invite = await getPendingInvite();
-        setPendingInvite(invite);
+        const invites = await getPendingInvites();
+        setPendingInvites(invites);
       } else {
-        setPendingInvite(null);
+        setPendingInvites([]);
       }
     } catch {
       setWorkspace(null);
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
       if (event === "SIGNED_OUT") {
         setProfile(null);
         setWorkspace(null);
-        setPendingInvite(null);
+        setPendingInvites([]);
       }
     });
 
@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
     workspace: workspace?.workspace ?? null,
     workspaceRole: workspace?.role ?? null,
     workspaceId: workspace?.workspace?.id ?? null,
-    pendingInvite,
+    pendingInvites,
     loading,
     refreshProfile: fetchProfile,
     refreshWorkspace: fetchWorkspace,

@@ -16,21 +16,20 @@ const INFO_NAV = [
 ];
 
 export default function Layout() {
-  const { profile, user, signOut, refreshProfile, pendingInvite, refreshWorkspace } = useAuth();
+  const { profile, user, signOut, refreshProfile, pendingInvites, refreshWorkspace } = useAuth();
   const displayName = profile?.username || user?.email?.split("@")[0] || "";
   const currentCurrency = profile?.currency ?? "PHP";
-  const [acceptingInvite, setAcceptingInvite] = useState(false);
+  const [acceptingId, setAcceptingId] = useState(null);
 
-  async function handleAcceptInvite() {
-    if (!pendingInvite) return;
-    setAcceptingInvite(true);
+  async function handleAcceptInvite(inviteId) {
+    setAcceptingId(inviteId);
     try {
-      await acceptInvite(pendingInvite.id);
+      await acceptInvite(inviteId);
       await refreshWorkspace();
     } catch {
       // silent — user can retry
     } finally {
-      setAcceptingInvite(false);
+      setAcceptingId(null);
     }
   }
 
@@ -113,18 +112,24 @@ export default function Layout() {
       </header>
 
       {/* ── Pending invite banner ── */}
-      {pendingInvite && (
-        <div className="border-b border-amber-200 bg-amber-50 px-6 py-3 flex items-center justify-between gap-4">
-          <p className="text-sm text-[#0D0D0D]">
-            <span className="font-semibold">{pendingInvite.workspace?.name}</span> has invited you to collaborate.
-          </p>
-          <button
-            onClick={handleAcceptInvite}
-            disabled={acceptingInvite}
-            className="shrink-0 rounded-lg bg-[#0D0D0D] px-4 py-1.5 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity"
-          >
-            {acceptingInvite ? "Accepting…" : "Accept invite"}
-          </button>
+      {pendingInvites?.length > 0 && (
+        <div className="border-b border-amber-200 bg-amber-50 px-6 py-3 space-y-2">
+          {pendingInvites.map((invite) => (
+            <div key={invite.id} className="flex items-center justify-between gap-4">
+              <p className="text-sm text-[#0D0D0D]">
+                <span className="font-semibold">{invite.ownerUsername || "Someone"}</span>
+                {" "}invited you to join{" "}
+                <span className="font-semibold">{invite.workspace?.name}</span>.
+              </p>
+              <button
+                onClick={() => handleAcceptInvite(invite.id)}
+                disabled={acceptingId === invite.id}
+                className="shrink-0 rounded-lg bg-[#0D0D0D] px-4 py-1.5 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity"
+              >
+                {acceptingId === invite.id ? "Accepting…" : "Accept"}
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
