@@ -147,6 +147,21 @@ export async function getWorkspaceMembers(workspaceId) {
     .eq("workspace_id", workspaceId)
     .order("created_at");
   if (error) throw error;
+
+  // Enrich accepted members with their username from profiles
+  const userIds = data.filter((m) => m.user_id).map((m) => m.user_id);
+  if (userIds.length > 0) {
+    const { data: memberProfiles } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("id", userIds);
+    const profileMap = Object.fromEntries((memberProfiles ?? []).map((p) => [p.id, p]));
+    return data.map((m) => ({
+      ...m,
+      username: m.user_id ? (profileMap[m.user_id]?.username ?? null) : null,
+    }));
+  }
+
   return data;
 }
 
