@@ -16,6 +16,7 @@ export default function Team() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [removingId, setRemovingId] = useState(null);
+  const [membersOpen, setMembersOpen] = useState(false);
 
   useEffect(() => {
     if (profile?.plan !== "business") return;
@@ -107,47 +108,62 @@ export default function Team() {
             </div>
           )}
 
-          {/* ── Members ── */}
+          {/* ── Members accordion ── */}
           <div className="mt-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-4">
-              Members · {1 + accepted.length}
-            </p>
-            <div className="rounded-2xl border border-[#E5E4E0] bg-white divide-y divide-[#E5E4E0] overflow-hidden">
-              {/* Owner row */}
-              <div className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <p className="text-sm font-medium text-[#0D0D0D]">
-                    {profile?.username || user?.email}
-                    <span className="ml-2 text-xs text-[#6B6B6B]">(you)</span>
-                  </p>
-                  <p className="text-xs text-[#6B6B6B]">{user?.email}</p>
-                </div>
-                <span className="rounded-full bg-[#0D0D0D] px-3 py-0.5 text-xs font-medium text-white">owner</span>
-              </div>
+            <button
+              onClick={() => setMembersOpen((o) => !o)}
+              className="flex w-full items-center justify-between rounded-2xl border border-[#E5E4E0] bg-white px-5 py-4 text-left transition-colors hover:bg-[#F5F4F0]"
+            >
+              <span className="text-sm font-semibold text-[#0D0D0D]">
+                Members · {1 + accepted.length}
+              </span>
+              <svg
+                width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                className={`text-[#6B6B6B] transition-transform duration-200 ${membersOpen ? "rotate-180" : ""}`}
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
 
-              {accepted.length === 0 ? (
-                <p className="px-5 py-4 text-sm text-[#6B6B6B]">No members yet. Invite someone below.</p>
-              ) : (
-                accepted.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between px-5 py-4">
-                    <div>
-                      <p className="text-sm font-medium text-[#0D0D0D]">
-                        {m.username || m.invited_email}
-                      </p>
-                      <p className="text-xs text-[#6B6B6B]">{m.invited_email}</p>
-                    </div>
-                    {workspaceRole === "owner" && (
-                      <button
-                        onClick={() => handleRemove(m.id)}
-                        disabled={removingId === m.id}
-                        className={btnSubtleRed}>
-                        {removingId === m.id ? "Removing…" : "Remove"}
-                      </button>
-                    )}
+            {membersOpen && (
+              <div className="mt-1 rounded-2xl border border-[#E5E4E0] bg-white divide-y divide-[#E5E4E0] overflow-hidden">
+                {/* Owner row */}
+                <div className="flex items-center justify-between px-5 py-4">
+                  <div>
+                    <p className="text-sm font-medium text-[#0D0D0D]">
+                      {profile?.username || user?.email}
+                      <span className="ml-2 text-xs text-[#6B6B6B]">(you)</span>
+                    </p>
+                    <p className="text-xs text-[#6B6B6B]">{user?.email}</p>
                   </div>
-                ))
-              )}
-            </div>
+                  <span className="rounded-full bg-[#0D0D0D] px-3 py-0.5 text-xs font-medium text-white">owner</span>
+                </div>
+
+                {accepted.length === 0 ? (
+                  <p className="px-5 py-4 text-sm text-[#6B6B6B]">No members yet. Invite someone below.</p>
+                ) : (
+                  accepted.map((m) => (
+                    <div key={m.id} className="flex items-center justify-between px-5 py-4">
+                      <div>
+                        <p className="text-sm font-medium text-[#0D0D0D]">
+                          {m.username || m.invited_email}
+                        </p>
+                        <p className="text-xs text-[#6B6B6B]">{m.invited_email}</p>
+                      </div>
+                      {workspaceRole === "owner" && (
+                        <button
+                          onClick={() => handleRemove(m.id)}
+                          disabled={removingId === m.id}
+                          className={btnSubtleRed}>
+                          {removingId === m.id ? "Removing…" : "Remove"}
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── Pending invites ── */}
