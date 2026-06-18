@@ -20,8 +20,14 @@ export default function Layout() {
   const displayName = profile?.username || user?.email?.split("@")[0] || "";
   const currentCurrency = profile?.currency ?? "PHP";
   const [acceptingId, setAcceptingId] = useState(null);
+  const [noPlanInviteId, setNoPlanInviteId] = useState(null);
 
   async function handleAcceptInvite(inviteId) {
+    if (!profile?.plan) {
+      setNoPlanInviteId(inviteId);
+      return;
+    }
+    setNoPlanInviteId(null);
     setAcceptingId(inviteId);
     try {
       await acceptInvite(inviteId);
@@ -115,19 +121,29 @@ export default function Layout() {
       {pendingInvites?.length > 0 && (
         <div className="border-b border-amber-200 bg-amber-50 px-6 py-3 space-y-2">
           {pendingInvites.map((invite) => (
-            <div key={invite.id} className="flex items-center justify-between gap-4">
-              <p className="text-sm text-[#0D0D0D]">
-                <span className="font-semibold">{invite.ownerUsername || "Someone"}</span>
-                {" "}invited you to join{" "}
-                <span className="font-semibold">{invite.workspace?.name}</span>.
-              </p>
-              <button
-                onClick={() => handleAcceptInvite(invite.id)}
-                disabled={acceptingId === invite.id}
-                className="shrink-0 rounded-lg bg-[#0D0D0D] px-4 py-1.5 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity"
-              >
-                {acceptingId === invite.id ? "Accepting…" : "Accept"}
-              </button>
+            <div key={invite.id} className="space-y-1">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-[#0D0D0D]">
+                  <span className="font-semibold">{invite.ownerUsername || "Someone"}</span>
+                  {" "}invited you to join{" "}
+                  <span className="font-semibold">{invite.workspace?.name}</span>.
+                </p>
+                <button
+                  onClick={() => handleAcceptInvite(invite.id)}
+                  disabled={acceptingId === invite.id}
+                  className="shrink-0 rounded-lg bg-[#0D0D0D] px-4 py-1.5 text-xs font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity"
+                >
+                  {acceptingId === invite.id ? "Accepting…" : "Accept"}
+                </button>
+              </div>
+              {noPlanInviteId === invite.id && (
+                <p className="text-xs text-amber-800">
+                  You need a plan before joining a workspace.{" "}
+                  <a href="/#plans" className="font-semibold underline hover:opacity-80" onClick={() => setNoPlanInviteId(null)}>
+                    Pick a plan →
+                  </a>
+                </p>
+              )}
             </div>
           ))}
         </div>
