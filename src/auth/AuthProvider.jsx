@@ -40,6 +40,9 @@ export function AuthProvider({ children }) {
       setSession(data.session);
       if (data.session) {
         await Promise.all([fetchProfile(), fetchWorkspace()]);
+      } else {
+        setProfile(null);
+        setWorkspace(null);
       }
       setLoading(false);
     });
