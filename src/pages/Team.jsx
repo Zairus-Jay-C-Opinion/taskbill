@@ -32,15 +32,14 @@ export default function Team() {
   const canManage = isOwner || isAdmin;
 
   useEffect(() => {
-    if (profile?.plan !== "business") return;
-    if (workspaceRole && workspaceRole !== "owner") return;
+    if (workspace) {
+      loadMembers();
+      return;
+    }
+    // No workspace yet — only business owners can create one
+    if (profile?.plan !== "business" || workspaceRole) return;
     init();
-  }, [profile]);
-
-  useEffect(() => {
-    if (!workspace) return;
-    loadMembers();
-  }, [workspace]);
+  }, [workspace, profile]);
 
   async function init() {
     setLoading(true);

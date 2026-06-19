@@ -254,11 +254,10 @@ export async function acceptInvite(memberId) {
 
 // ─── Clients ─────────────────────────────────────────────────────────────────
 
-export async function getClients() {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("*")
-    .order("name");
+export async function getClients(workspaceId = null) {
+  let query = supabase.from("clients").select("*").order("name");
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -275,7 +274,7 @@ export async function createClient({ name, email, workspaceId }) {
 
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 
-export async function getTasks({ invoiceId = null } = {}) {
+export async function getTasks({ invoiceId = null, workspaceId = null } = {}) {
   let query = supabase
     .from("tasks")
     .select("*, client:clients(name)")
@@ -288,16 +287,20 @@ export async function getTasks({ invoiceId = null } = {}) {
     query = query.eq("invoice_id", invoiceId);
   }
 
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+
   const { data, error } = await query;
   if (error) throw error;
   return data;
 }
 
-export async function getAllTasks() {
-  const { data, error } = await supabase
+export async function getAllTasks(workspaceId = null) {
+  let query = supabase
     .from("tasks")
     .select("*, client:clients(name)")
     .order("created_at", { ascending: false });
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -330,8 +333,8 @@ export async function updateTaskInvoice(taskId, invoiceId) {
 
 // ─── Invoices ─────────────────────────────────────────────────────────────────
 
-export async function getInvoices() {
-  const { data, error } = await supabase
+export async function getInvoices(workspaceId = null) {
+  let query = supabase
     .from("invoices")
     .select(`
       *,
@@ -339,6 +342,8 @@ export async function getInvoices() {
       tasks(id, title, amount, due_date)
     `)
     .order("created_at", { ascending: false });
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query;
   if (error) throw error;
   return data.map((inv) => ({
     ...inv,

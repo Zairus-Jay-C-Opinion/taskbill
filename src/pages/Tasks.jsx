@@ -79,7 +79,7 @@ export default function Tasks() {
     setLoading(true);
     setError("");
     try {
-      const [t, c] = await Promise.all([getTasks(), getClients()]);
+      const [t, c] = await Promise.all([getTasks({ workspaceId }), getClients(workspaceId)]);
       setTasks(t);
       setClients(c);
       checkDueNotifications(t, sym);

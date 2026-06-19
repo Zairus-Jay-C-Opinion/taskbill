@@ -19,7 +19,7 @@ function RevenueTooltip({ active, payload, label, sym }) {
 }
 
 export default function Analytics() {
-  const { profile } = useAuth();
+  const { profile, workspaceId } = useAuth();
   const sym = currencySymbol(profile?.currency);
 
   const [invoices, setInvoices] = useState([]);
@@ -32,7 +32,11 @@ export default function Analytics() {
     if (profile?.plan !== "business") return;
     async function load() {
       try {
-        const [inv, cli, tsk] = await Promise.all([getInvoices(), getClients(), getAllTasks()]);
+        const [inv, cli, tsk] = await Promise.all([
+          getInvoices(workspaceId),
+          getClients(workspaceId),
+          getAllTasks(workspaceId),
+        ]);
         setInvoices(inv);
         setClients(cli);
         setTasks(tsk);
@@ -43,7 +47,7 @@ export default function Analytics() {
       }
     }
     load();
-  }, [profile?.plan]);
+  }, [profile?.plan, workspaceId]);
 
   if (profile?.plan !== "business") return <Navigate to="/" replace />;
 

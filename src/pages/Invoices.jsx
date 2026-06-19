@@ -61,7 +61,7 @@ export default function Invoices() {
   async function load() {
     setError("");
     try {
-      const [inv, cli, tasks] = await Promise.all([getInvoices(), getClients(), getTasks()]);
+      const [inv, cli, tasks] = await Promise.all([getInvoices(workspaceId), getClients(workspaceId), getTasks({ workspaceId })]);
       setInvoices(inv);
       setClients(cli);
       setUnbilledTasks(tasks);

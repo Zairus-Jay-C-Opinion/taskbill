@@ -88,9 +88,11 @@ export default function Layout() {
     }
     setNoPlanInviteId(null);
     setAcceptingId(inviteId);
+    const invite = pendingInvites.find((i) => i.id === inviteId);
     try {
       await acceptInvite(inviteId);
       await refreshWorkspace();
+      if (invite?.workspace?.id) switchWorkspace(invite.workspace.id);
     } catch {
       // silent — user can retry
     } finally {
