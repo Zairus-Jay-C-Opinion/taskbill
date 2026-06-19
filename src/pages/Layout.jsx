@@ -18,7 +18,7 @@ const INFO_NAV = [
 ];
 
 export default function Layout() {
-  const { profile, user, signOut, refreshProfile, pendingInvites, refreshWorkspace } = useAuth();
+  const { profile, user, signOut, refreshProfile, pendingInvites, refreshWorkspace, workspace, workspaceRole } = useAuth();
   const displayName = profile?.username || user?.email?.split("@")[0] || "";
   const currentCurrency = profile?.currency ?? "PHP";
   const [acceptingId, setAcceptingId] = useState(null);
@@ -65,19 +65,21 @@ export default function Layout() {
                 {label}
               </NavLink>
             ))}
-            {profile?.plan === "business" && (
+            {(profile?.plan === "business" || workspace) && (
+              <NavLink to="/team"
+                className={({ isActive }) =>
+                  `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
+                }>
+                Team
+              </NavLink>
+            )}
+            {profile?.plan === "business" && workspaceRole === "owner" && (
               <>
                 <NavLink to="/analytics"
                   className={({ isActive }) =>
                     `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
                   }>
                   Analytics
-                </NavLink>
-                <NavLink to="/team"
-                  className={({ isActive }) =>
-                    `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
-                  }>
-                  Team
                 </NavLink>
                 <NavLink to="/branding"
                   className={({ isActive }) =>

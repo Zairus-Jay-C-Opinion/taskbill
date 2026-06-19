@@ -388,22 +388,33 @@ export default function Team() {
                       No messages yet. Say hello to your team!
                     </p>
                   ) : (
-                    messages.map((msg) => (
-                      <div key={msg.id} className="flex items-start gap-3">
-                        <Avatar url={msg.avatar_url} name={msg.username || msg.sender_id} size="xs" />
-                        <div className="min-w-0">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xs font-semibold text-[#0D0D0D] truncate">
-                              {msg.username || "Unknown"}
-                            </span>
-                            <span className="text-xs text-[#6B6B6B] shrink-0">
+                    messages.map((msg) => {
+                      const isMine = msg.sender_id === user?.id;
+                      return (
+                        <div key={msg.id} className={`flex items-end gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}>
+                          {!isMine && (
+                            <Avatar url={msg.avatar_url} name={msg.username || msg.sender_id} size="xs" />
+                          )}
+                          <div className={`max-w-[72%] ${isMine ? "items-end" : "items-start"} flex flex-col gap-1`}>
+                            {!isMine && (
+                              <span className="text-xs font-semibold text-[#0D0D0D] px-1">
+                                {msg.username || "Unknown"}
+                              </span>
+                            )}
+                            <div className={`px-3 py-2 rounded-2xl text-sm break-words ${
+                              isMine
+                                ? "bg-[#0D0D0D] text-white rounded-br-sm"
+                                : "bg-[#F5F4F0] text-[#0D0D0D] rounded-bl-sm"
+                            }`}>
+                              {msg.content}
+                            </div>
+                            <span className="text-xs text-[#6B6B6B] px-1">
                               {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </span>
                           </div>
-                          <p className="text-sm text-[#0D0D0D] break-words mt-0.5">{msg.content}</p>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                   <div ref={messagesEndRef} />
                 </div>
