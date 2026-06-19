@@ -1,11 +1,11 @@
 export const CURRENCIES = [
-  { code: "PHP", symbol: "₱", flag: "🇵🇭" },
-  { code: "USD", symbol: "$", flag: "🇺🇸" },
-  { code: "EUR", symbol: "€", flag: "🇪🇺" },
-  { code: "GBP", symbol: "£", flag: "🇬🇧" },
-  { code: "SGD", symbol: "S$", flag: "🇸🇬" },
-  { code: "AUD", symbol: "A$", flag: "🇦🇺" },
-  { code: "JPY", symbol: "¥", flag: "🇯🇵" },
+  { code: "PHP", symbol: "₱", country: "ph" },
+  { code: "USD", symbol: "$", country: "us" },
+  { code: "EUR", symbol: "€", country: "eu" },
+  { code: "GBP", symbol: "£", country: "gb" },
+  { code: "SGD", symbol: "S$", country: "sg" },
+  { code: "AUD", symbol: "A$", country: "au" },
+  { code: "JPY", symbol: "¥", country: "jp" },
 ];
 
 export function currencySymbol(code) {

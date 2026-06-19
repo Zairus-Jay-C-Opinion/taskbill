@@ -28,7 +28,9 @@ export default function Layout() {
   const [noPlanInviteId, setNoPlanInviteId] = useState(null);
   const [chatUnread, setChatUnread] = useState(0);
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const switcherRef = useRef(null);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const switcherRef  = useRef(null);
+  const currencyRef  = useRef(null);
 
   // Refs so Realtime callback always reads current values (avoids stale closure)
   const pathnameRef = useRef(location.pathname);
@@ -53,6 +55,16 @@ export default function Layout() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [switcherOpen]);
+
+  // Close currency dropdown on outside click
+  useEffect(() => {
+    if (!currencyOpen) return;
+    function close(e) {
+      if (!currencyRef.current?.contains(e.target)) setCurrencyOpen(false);
+    }
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [currencyOpen]);
 
   // Global chat Realtime listener for unread badge + browser notifications
   useEffect(() => {
@@ -97,16 +109,6 @@ export default function Layout() {
       // silent — user can retry
     } finally {
       setAcceptingId(null);
-    }
-  }
-
-  async function handleCurrencyChange(e) {
-    const currency = e.target.value;
-    try {
-      await saveCurrency(user.id, currency);
-      await refreshProfile();
-    } catch {
-      // silent
     }
   }
 
@@ -208,16 +210,40 @@ export default function Layout() {
               <span className="text-sm font-medium">{displayName}</span>
             </NavLink>
           )}
-          <select
-            value={currentCurrency}
-            onChange={handleCurrencyChange}
-            className="rounded-xl border border-[#E5E4E0] bg-white px-3 py-1.5 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] transition-colors"
-            title="Currency"
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>{c.flag} {c.code} {c.symbol}</option>
-            ))}
-          </select>
+          <div ref={currencyRef} className="relative">
+            <button
+              onClick={() => setCurrencyOpen((o) => !o)}
+              className="flex items-center gap-2 rounded-xl border border-[#E5E4E0] bg-white px-3 py-1.5 text-sm text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors"
+              title="Currency"
+            >
+              <img
+                src={`https://flagcdn.com/w20/${CURRENCIES.find((c) => c.code === currentCurrency)?.country}.png`}
+                width="16" height="12" alt={currentCurrency}
+                className="rounded-sm shrink-0"
+              />
+              <span className="font-medium">{currentCurrency}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                className={`shrink-0 text-[#6B6B6B] transition-transform duration-150 ${currencyOpen ? "rotate-180" : ""}`}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+
+            {currencyOpen && (
+              <div className="absolute right-0 top-full mt-1 z-30 w-36 rounded-2xl border border-[#E5E4E0] bg-white shadow-lg overflow-hidden">
+                {CURRENCIES.map((c) => (
+                  <button
+                    key={c.code}
+                    onClick={async () => { setCurrencyOpen(false); await saveCurrency(user.id, c.code); await refreshProfile(); }}
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-[#F5F4F0] ${c.code === currentCurrency ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B]"}`}
+                  >
+                    <img src={`https://flagcdn.com/w20/${c.country}.png`} width="16" height="12" alt={c.code} className="rounded-sm shrink-0" />
+                    <span>{c.code}</span>
+                    <span className="ml-auto text-xs text-[#6B6B6B]">{c.symbol}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={signOut}
             className="rounded-xl border border-[#E5E4E0] px-4 py-1.5 text-sm font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors"
