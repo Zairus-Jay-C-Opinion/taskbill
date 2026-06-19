@@ -15,7 +15,7 @@ const btnSubtleRed = "rounded-lg border border-red-100 bg-white px-3 py-1 text-x
 const btnSubtle = "rounded-lg border border-[#E5E4E0] bg-white px-3 py-1 text-xs font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] disabled:opacity-40 transition-colors";
 
 export default function Team() {
-  const { profile, user, workspace, workspaceRole, workspaceMemberId, refreshWorkspace } = useAuth();
+  const { profile, user, workspace, workspaceRole, workspaceMemberId, refreshWorkspace, workspaces, switchWorkspace } = useAuth();
 
   const [members, setMembers]         = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -30,23 +30,21 @@ export default function Team() {
   const isOwner  = workspaceRole === "owner";
   const isAdmin  = workspaceRole === "admin";
   const canManage = isOwner || isAdmin;
+  const ownsAnyWorkspace = workspaces.some((e) => e.role === "owner");
 
   useEffect(() => {
-    if (workspace) {
-      loadMembers();
-      return;
-    }
-    // No workspace yet — only business owners can create one
-    if (profile?.plan !== "business" || workspaceRole) return;
-    init();
-  }, [workspace, profile]);
+    if (workspace) loadMembers();
+    // Business plan user who doesn't own any workspace yet — create one
+    if (profile?.plan === "business" && !ownsAnyWorkspace) init();
+  }, [workspace, profile?.plan, ownsAnyWorkspace]);
 
   async function init() {
     setLoading(true);
     setError("");
     try {
-      await getOrCreateWorkspace(user.id, profile?.username ? `${profile.username}'s workspace` : "My workspace");
+      const entry = await getOrCreateWorkspace(user.id, profile?.username ? `${profile.username}'s workspace` : "My workspace");
       await refreshWorkspace();
+      if (entry?.workspace?.id) switchWorkspace(entry.workspace.id);
     } catch (e) {
       setError(e.message);
     } finally {

@@ -155,7 +155,8 @@ export async function getWorkspace() {
 export async function getOrCreateWorkspace(userId, name) {
   if (!userId) throw new Error("Not authenticated");
   const existing = await getWorkspaces();
-  if (existing.length > 0) return existing[0];
+  const owned = existing.find((e) => e.role === "owner");
+  if (owned) return owned;
 
   // Create workspace and backfill existing data
   const { data: workspace, error } = await supabase
