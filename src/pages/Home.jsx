@@ -47,15 +47,15 @@ function ScrollToTop() {
 const ABOUT_TABS = [
   {
     label: "Track tasks",
-    body: "Log work by client with a title, description, and amount. Every billable hour and deliverable stays organised — nothing slips through the cracks.",
+    body: "Log work by client with a title, description, and amount. Every billable hour and deliverable stays organised — nothing slips through the cracks. On a team plan, your whole workspace sees the same task list in real time.",
   },
   {
     label: "Invoice clients",
-    body: "Group unbilled tasks into an invoice and send it in seconds. Totals are calculated automatically so you never do the math manually again.",
+    body: "Group unbilled tasks into an invoice and send it in seconds. Totals are calculated automatically, and TaskBill's AI can draft the email for you. Every invoice comes with a Stripe payment link so clients can pay immediately — no chasing required.",
   },
   {
     label: "Stay in control",
-    body: "Monitor draft, sent, and paid invoices at a glance. Your data is isolated per account and protected by row-level security — no one else can see it.",
+    body: "Monitor draft, sent, and paid invoices at a glance. Collaborate with your team through built-in chat — no Slack needed. Your data is isolated per account and protected by row-level security, so nothing leaks between workspaces.",
   },
 ];
 
