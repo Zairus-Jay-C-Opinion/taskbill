@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { getOrCreateWorkspace, getWorkspaceMembers, inviteMember, removeMember } from "../lib/db";
+import { getOrCreateWorkspace, getWorkspaceMembers, inviteMember, removeMember, getChatMessages, sendChatMessage } from "../lib/db";
+import { supabase } from "../lib/supabaseClient";
 import { Skeleton } from "../components/Skeleton";
 import Avatar from "../components/Avatar";
 
@@ -20,6 +21,14 @@ export default function Team() {
   const [removingId, setRemovingId] = useState(null);
   const [membersOpen, setMembersOpen] = useState(false);
 
+  // ── Chat state (all hooks before Navigate guard) ──
+  const [messages, setMessages]       = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatInput, setChatInput]     = useState("");
+  const [sending, setSending]         = useState(false);
+  const messagesEndRef                = useRef(null);
+  const loadMessagesRef               = useRef(null);
+
   useEffect(() => {
     if (profile?.plan !== "business") return;
     init();
@@ -29,6 +38,31 @@ export default function Team() {
     if (!workspace) return;
     loadMembers();
   }, [workspace]);
+
+  // Initial chat load
+  useEffect(() => {
+    if (!workspace?.id) return;
+    loadMessages();
+  }, [workspace?.id]);
+
+  // Realtime subscription for new chat messages
+  useEffect(() => {
+    if (!workspace?.id) return;
+    const channel = supabase
+      .channel(`chat-${workspace.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages", filter: `workspace_id=eq.${workspace.id}` },
+        () => { loadMessagesRef.current?.(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [workspace?.id]);
+
+  // Auto-scroll to bottom when messages update
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   async function init() {
     setLoading(true);
@@ -51,6 +85,20 @@ export default function Team() {
       setError(e.message);
     }
   }
+
+  async function loadMessages() {
+    if (!workspace?.id) return;
+    setChatLoading(true);
+    try {
+      const msgs = await getChatMessages(workspace.id);
+      setMessages(msgs);
+    } catch (e) {
+      console.error("Chat load error:", e.message);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+  loadMessagesRef.current = loadMessages;
 
   async function handleInvite(e) {
     e.preventDefault();
@@ -78,6 +126,21 @@ export default function Team() {
       setError(e.message);
     } finally {
       setRemovingId(null);
+    }
+  }
+
+  async function handleSend(e) {
+    e.preventDefault();
+    if (!chatInput.trim() || !workspace?.id || !user?.id) return;
+    setSending(true);
+    try {
+      await sendChatMessage(workspace.id, user.id, chatInput);
+      setChatInput("");
+      await loadMessages();
+    } catch (e) {
+      console.error("Send error:", e.message);
+    } finally {
+      setSending(false);
     }
   }
 
@@ -228,6 +291,69 @@ export default function Team() {
               <p className="mt-2 text-xs text-[#6B6B6B]">
                 They'll see a prompt to accept when they log in to TaskBill.
               </p>
+            </div>
+          )}
+
+          {/* ── Team Chat ── */}
+          {workspace && (
+            <div className="mt-10">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-4">Team Chat</p>
+              <div className="rounded-2xl border border-[#E5E4E0] bg-white overflow-hidden">
+                {/* Message list */}
+                <div className="h-72 overflow-y-auto p-4 space-y-4">
+                  {chatLoading && messages.length === 0 ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-10 w-3/4" />
+                      <Skeleton className="h-10 w-1/2" />
+                      <Skeleton className="h-10 w-2/3" />
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <p className="text-sm text-[#6B6B6B] text-center pt-8">
+                      No messages yet. Say hello to your team!
+                    </p>
+                  ) : (
+                    messages.map((msg) => (
+                      <div key={msg.id} className="flex items-start gap-3">
+                        <Avatar url={msg.avatar_url} name={msg.username || msg.sender_id} size="xs" />
+                        <div className="min-w-0">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xs font-semibold text-[#0D0D0D] truncate">
+                              {msg.username || "Unknown"}
+                            </span>
+                            <span className="text-xs text-[#6B6B6B] shrink-0">
+                              {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[#0D0D0D] break-words mt-0.5">{msg.content}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <div className="border-t border-[#E5E4E0]" />
+
+                {/* Input */}
+                <form onSubmit={handleSend} className="flex gap-2 p-3">
+                  <input
+                    type="text"
+                    placeholder="Message your team…"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    disabled={sending}
+                    maxLength={2000}
+                    className={`${inputCls} py-2`}
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending || !chatInput.trim()}
+                    className={`${btnPrimary} shrink-0 py-2`}
+                  >
+                    {sending ? "…" : "Send"}
+                  </button>
+                </form>
+              </div>
             </div>
           )}
         </>

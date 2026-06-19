@@ -383,3 +383,40 @@ export async function updateInvoiceStatus(invoiceId, status) {
   if (error) throw error;
   return data;
 }
+
+export async function getChatMessages(workspaceId) {
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: true })
+    .limit(100);
+  if (error) throw error;
+
+  const senderIds = [...new Set(data.map((m) => m.sender_id))];
+  if (senderIds.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, username, avatar_url")
+    .in("id", senderIds);
+
+  const profileMap = Object.fromEntries((profiles ?? []).map((p) => [p.id, p]));
+  return data.map((m) => ({
+    ...m,
+    username:   profileMap[m.sender_id]?.username   ?? null,
+    avatar_url: profileMap[m.sender_id]?.avatar_url ?? null,
+  }));
+}
+
+export async function sendChatMessage(workspaceId, senderId, content) {
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error("Message cannot be empty");
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .insert({ workspace_id: workspaceId, sender_id: senderId, content: trimmed })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
