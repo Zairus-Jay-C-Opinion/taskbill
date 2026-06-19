@@ -1,13 +1,16 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { getProfile, getWorkspace, getPendingInvites } from "../lib/db";
+import { getProfile, getWorkspaces, getPendingInvites } from "../lib/db";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(undefined);
-  const [workspace, setWorkspace] = useState(undefined); // { workspace, role } | null | undefined
+  const [workspaces, setWorkspaces] = useState(undefined);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState(
+    () => localStorage.getItem("taskbill_active_workspace_id") ?? null
+  );
   const [pendingInvites, setPendingInvites] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,29 +23,30 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const fetchWorkspace = useCallback(async () => {
+  const fetchWorkspaces = useCallback(async () => {
     try {
-      const w = await getWorkspace();
-      setWorkspace(w ?? null);
-      if (!w) {
-        const invites = await getPendingInvites();
-        setPendingInvites(invites);
-      } else {
-        setPendingInvites([]);
-      }
+      const list = await getWorkspaces();
+      setWorkspaces(list);
+      const invites = await getPendingInvites();
+      setPendingInvites(invites);
     } catch {
-      setWorkspace(null);
+      setWorkspaces([]);
     }
+  }, []);
+
+  const switchWorkspace = useCallback((id) => {
+    setActiveWorkspaceId(id);
+    localStorage.setItem("taskbill_active_workspace_id", id);
   }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
       if (data.session) {
-        await Promise.all([fetchProfile(), fetchWorkspace()]);
+        await Promise.all([fetchProfile(), fetchWorkspaces()]);
       } else {
         setProfile(null);
-        setWorkspace(null);
+        setWorkspaces([]);
       }
       setLoading(false);
     });
@@ -50,30 +54,39 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
       if (event === "SIGNED_IN" && newSession) {
-        await Promise.all([fetchProfile(), fetchWorkspace()]);
+        await Promise.all([fetchProfile(), fetchWorkspaces()]);
       }
       if (event === "SIGNED_OUT") {
         setProfile(null);
-        setWorkspace(null);
+        setWorkspaces([]);
+        setActiveWorkspaceId(null);
         setPendingInvites([]);
+        localStorage.removeItem("taskbill_active_workspace_id");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile, fetchWorkspace]);
+  }, [fetchProfile, fetchWorkspaces]);
+
+  const activeEntry =
+    workspaces?.find((e) => e.workspace.id === activeWorkspaceId)
+    ?? workspaces?.[0]
+    ?? null;
 
   const value = {
     session,
     user: session?.user ?? null,
     profile,
-    workspace: workspace?.workspace ?? null,
-    workspaceRole: workspace?.role ?? null,
-    workspaceId: workspace?.workspace?.id ?? null,
-    workspaceMemberId: workspace?.memberId ?? null,
+    workspace:         activeEntry?.workspace  ?? null,
+    workspaceRole:     activeEntry?.role       ?? null,
+    workspaceId:       activeEntry?.workspace?.id ?? null,
+    workspaceMemberId: activeEntry?.memberId   ?? null,
+    workspaces:        workspaces ?? [],
+    switchWorkspace,
     pendingInvites,
     loading,
     refreshProfile: fetchProfile,
-    refreshWorkspace: fetchWorkspace,
+    refreshWorkspace: fetchWorkspaces,
     signOut: () => supabase.auth.signOut(),
   };
 

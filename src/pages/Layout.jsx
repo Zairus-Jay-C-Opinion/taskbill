@@ -19,7 +19,7 @@ const INFO_NAV = [
 ];
 
 export default function Layout() {
-  const { profile, user, signOut, refreshProfile, pendingInvites, refreshWorkspace, workspace, workspaceRole, workspaceId } = useAuth();
+  const { profile, user, signOut, refreshProfile, pendingInvites, refreshWorkspace, workspace, workspaceRole, workspaceId, workspaces, switchWorkspace } = useAuth();
   const displayName = profile?.username || user?.email?.split("@")[0] || "";
   const currentCurrency = profile?.currency ?? "PHP";
   const location = useLocation();
@@ -27,6 +27,8 @@ export default function Layout() {
   const [acceptingId, setAcceptingId] = useState(null);
   const [noPlanInviteId, setNoPlanInviteId] = useState(null);
   const [chatUnread, setChatUnread] = useState(0);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const switcherRef = useRef(null);
 
   // Refs so Realtime callback always reads current values (avoids stale closure)
   const pathnameRef = useRef(location.pathname);
@@ -38,6 +40,19 @@ export default function Layout() {
   useEffect(() => {
     if (location.pathname === "/team") setChatUnread(0);
   }, [location.pathname]);
+
+  // Reset unread badge when switching workspaces
+  useEffect(() => { setChatUnread(0); }, [workspaceId]);
+
+  // Close workspace switcher on outside click
+  useEffect(() => {
+    if (!switcherOpen) return;
+    function close(e) {
+      if (!switcherRef.current?.contains(e.target)) setSwitcherOpen(false);
+    }
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [switcherOpen]);
 
   // Global chat Realtime listener for unread badge + browser notifications
   useEffect(() => {
@@ -146,6 +161,40 @@ export default function Layout() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
+          {workspaces.length > 0 && (
+            <div ref={switcherRef} className="relative">
+              <button
+                onClick={() => setSwitcherOpen((o) => !o)}
+                className="flex items-center gap-2 rounded-xl border border-[#E5E4E0] bg-white px-3 py-1.5 text-sm text-[#0D0D0D] hover:bg-[#F5F4F0] transition-colors"
+              >
+                <span className="max-w-[120px] truncate font-medium">
+                  {workspace?.name ?? "Select workspace"}
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  className={`shrink-0 text-[#6B6B6B] transition-transform duration-150 ${switcherOpen ? "rotate-180" : ""}`}>
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {switcherOpen && (
+                <div className="absolute right-0 top-full mt-1 z-30 min-w-[180px] rounded-2xl border border-[#E5E4E0] bg-white shadow-lg overflow-hidden">
+                  {workspaces.map((entry) => (
+                    <button
+                      key={entry.workspace.id}
+                      onClick={() => { switchWorkspace(entry.workspace.id); setSwitcherOpen(false); }}
+                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-[#F5F4F0] ${
+                        entry.workspace.id === workspaceId ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B]"
+                      }`}
+                    >
+                      <span className="truncate">{entry.workspace.name}</span>
+                      <span className="ml-3 shrink-0 text-xs text-[#6B6B6B]">{entry.role}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {displayName && (
             <NavLink to="/profile"
               className={({ isActive }) =>

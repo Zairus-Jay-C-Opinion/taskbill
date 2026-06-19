@@ -89,7 +89,7 @@ export default function Invoices() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [workspaceId]);
 
   // Persist AI drafts and collapsed state to localStorage so they survive tab switches
   useEffect(() => {

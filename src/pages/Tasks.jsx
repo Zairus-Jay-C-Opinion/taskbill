@@ -73,7 +73,7 @@ export default function Tasks() {
   const [showClientForm, setShowClientForm] = useState(false);
   const [clientForm, setClientForm] = useState({ name: "", email: "" });
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [workspaceId]);
 
   async function load() {
     setLoading(true);

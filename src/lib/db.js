@@ -121,32 +121,41 @@ export async function upsertProfile({ id, username }) {
 
 // ─── Workspace ───────────────────────────────────────────────────────────────
 
-export async function getWorkspace() {
+export async function getWorkspaces() {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return [];
 
   const { data: owned } = await supabase
     .from("workspaces")
     .select("*")
     .eq("owner_id", user.id)
-    .maybeSingle();
-  if (owned) return { workspace: owned, role: "owner" };
+    .order("created_at");
 
-  const { data: membership } = await supabase
+  const { data: memberships } = await supabase
     .from("workspace_members")
     .select("*, workspace:workspaces(*)")
     .eq("user_id", user.id)
     .eq("status", "accepted")
-    .maybeSingle();
-  if (membership) return { workspace: membership.workspace, role: membership.role, memberId: membership.id };
+    .order("created_at");
 
-  return null;
+  const ownedIds = new Set((owned ?? []).map((w) => w.id));
+
+  return [
+    ...(owned ?? []).map((w) => ({ workspace: w, role: "owner", memberId: null })),
+    ...(memberships ?? [])
+      .filter((m) => !ownedIds.has(m.workspace?.id))
+      .map((m) => ({ workspace: m.workspace, role: m.role, memberId: m.id })),
+  ];
+}
+
+export async function getWorkspace() {
+  return (await getWorkspaces())[0] ?? null;
 }
 
 export async function getOrCreateWorkspace(userId, name) {
   if (!userId) throw new Error("Not authenticated");
-  const existing = await getWorkspace();
-  if (existing) return existing;
+  const existing = await getWorkspaces();
+  if (existing.length > 0) return existing[0];
 
   // Create workspace and backfill existing data
   const { data: workspace, error } = await supabase
