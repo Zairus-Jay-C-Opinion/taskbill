@@ -215,7 +215,7 @@ export default function Layout() {
             title="Currency"
           >
             {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>{c.code} {c.symbol}</option>
+              <option key={c.code} value={c.code}>{c.flag} {c.code} {c.symbol}</option>
             ))}
           </select>
           <button
