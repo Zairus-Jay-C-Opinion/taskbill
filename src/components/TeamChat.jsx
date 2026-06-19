@@ -168,7 +168,11 @@ export default function TeamChat({ workspaceId }) {
           const isMine = msg.sender_id === user?.id;
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}>
-              {!isMine && <Avatar url={msg.avatar_url} name={msg.username || msg.sender_id} size="xs" />}
+              {!isMine && (
+                <div className="shrink-0 pb-5">
+                  <Avatar url={msg.avatar_url} name={msg.username || msg.sender_id} size="xs" />
+                </div>
+              )}
               <div className={`max-w-[72%] flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}>
                 {!isMine && (
                   <span className="text-xs font-semibold text-[#0D0D0D] px-1">{msg.username || "Unknown"}</span>
