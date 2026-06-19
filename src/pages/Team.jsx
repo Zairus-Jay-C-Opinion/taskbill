@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { getOrCreateWorkspace, getWorkspaceMembers, inviteMember, removeMember, getChatMessages, sendChatMessage } from "../lib/db";
+import {
+  getOrCreateWorkspace, getWorkspaceMembers, inviteMember,
+  removeMember, leaveWorkspace, setMemberRole,
+  getChatMessages, sendChatMessage,
+} from "../lib/db";
 import { supabase } from "../lib/supabaseClient";
 import { Skeleton } from "../components/Skeleton";
 import Avatar from "../components/Avatar";
@@ -9,9 +13,10 @@ import Avatar from "../components/Avatar";
 const inputCls = "w-full rounded-xl border border-[#E5E4E0] bg-white px-4 py-3 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors";
 const btnPrimary = "rounded-xl bg-[#0D0D0D] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-80 disabled:opacity-40 transition-opacity";
 const btnSubtleRed = "rounded-lg border border-red-100 bg-white px-3 py-1 text-xs font-medium text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors";
+const btnSubtle = "rounded-lg border border-[#E5E4E0] bg-white px-3 py-1 text-xs font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] disabled:opacity-40 transition-colors";
 
 export default function Team() {
-  const { profile, user, workspace, workspaceRole, refreshWorkspace } = useAuth();
+  const { profile, user, workspace, workspaceRole, workspaceMemberId, refreshWorkspace } = useAuth();
 
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,9 +24,11 @@ export default function Team() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [removingId, setRemovingId] = useState(null);
+  const [togglingRoleId, setTogglingRoleId] = useState(null);
+  const [leaving, setLeaving] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
 
-  // ── Chat state (all hooks before Navigate guard) ──
+  // ── Chat state ──
   const [messages, setMessages]       = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatInput, setChatInput]     = useState("");
@@ -29,8 +36,13 @@ export default function Team() {
   const messagesEndRef                = useRef(null);
   const loadMessagesRef               = useRef(null);
 
+  const isOwner = workspaceRole === "owner";
+  const isAdmin = workspaceRole === "admin";
+  const canManage = isOwner || isAdmin;
+
   useEffect(() => {
     if (profile?.plan !== "business") return;
+    if (workspaceRole && workspaceRole !== "owner") return; // already in a workspace as member
     init();
   }, [profile]);
 
@@ -39,13 +51,11 @@ export default function Team() {
     loadMembers();
   }, [workspace]);
 
-  // Initial chat load
   useEffect(() => {
     if (!workspace?.id) return;
     loadMessages();
   }, [workspace?.id]);
 
-  // Realtime subscription for new chat messages
   useEffect(() => {
     if (!workspace?.id) return;
     const channel = supabase
@@ -59,7 +69,6 @@ export default function Team() {
     return () => { supabase.removeChannel(channel); };
   }, [workspace?.id]);
 
-  // Auto-scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -83,6 +92,8 @@ export default function Team() {
       setMembers(m);
     } catch (e) {
       setError(e.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -129,6 +140,32 @@ export default function Team() {
     }
   }
 
+  async function handleLeave() {
+    if (!workspaceMemberId) return;
+    if (!confirm("Are you sure you want to leave this workspace?")) return;
+    setLeaving(true);
+    try {
+      await leaveWorkspace(workspaceMemberId);
+      await refreshWorkspace();
+    } catch (e) {
+      setError(e.message);
+      setLeaving(false);
+    }
+  }
+
+  async function handleToggleRole(member) {
+    setTogglingRoleId(member.id);
+    try {
+      const newRole = member.role === "admin" ? "member" : "admin";
+      await setMemberRole(member.id, newRole);
+      await loadMembers();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setTogglingRoleId(null);
+    }
+  }
+
   async function handleSend(e) {
     e.preventDefault();
     if (!chatInput.trim() || !workspace?.id || !user?.id) return;
@@ -144,17 +181,22 @@ export default function Team() {
     }
   }
 
-  if (profile?.plan !== "business") return <Navigate to="/" replace />;
+  // Allow: business plan owners creating/managing workspace, or any accepted member/admin
+  if (profile?.plan !== "business" && !workspaceRole) return <Navigate to="/" replace />;
 
   const accepted = members.filter((m) => m.status === "accepted");
   const pending  = members.filter((m) => m.status === "pending");
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Business</p>
+      <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">
+        {isOwner ? "Business" : "Workspace"}
+      </p>
       <h2 className="mt-2 text-3xl font-bold tracking-tight text-[#0D0D0D]">Team</h2>
       <p className="mt-1 text-sm text-[#6B6B6B]">
-        Invite collaborators to share your clients, tasks, and invoices.
+        {isOwner
+          ? "Invite collaborators to share your clients, tasks, and invoices."
+          : "Collaborate with your team on shared clients, tasks, and invoices."}
       </p>
 
       {error && (
@@ -174,9 +216,20 @@ export default function Team() {
         <>
           {/* ── Workspace info ── */}
           {workspace && (
-            <div className="mt-6 rounded-2xl border border-[#E5E4E0] bg-white px-6 py-4">
-              <p className="text-xs text-[#6B6B6B]">Workspace</p>
-              <p className="mt-0.5 text-sm font-semibold text-[#0D0D0D]">{workspace.name}</p>
+            <div className="mt-6 flex items-center justify-between rounded-2xl border border-[#E5E4E0] bg-white px-6 py-4">
+              <div>
+                <p className="text-xs text-[#6B6B6B]">Workspace</p>
+                <p className="mt-0.5 text-sm font-semibold text-[#0D0D0D]">{workspace.name}</p>
+              </div>
+              {!isOwner && (
+                <button
+                  onClick={handleLeave}
+                  disabled={leaving}
+                  className={btnSubtleRed}
+                >
+                  {leaving ? "Leaving…" : "Leave workspace"}
+                </button>
+              )}
             </div>
           )}
 
@@ -203,13 +256,13 @@ export default function Team() {
                 {/* Owner row */}
                 <div className="flex items-center justify-between px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <Avatar url={profile?.avatar_url} name={profile?.username || user?.email} size="sm" />
+                    <Avatar url={isOwner ? profile?.avatar_url : null} name={workspace?.name} size="sm" />
                     <div>
                       <p className="text-sm font-medium text-[#0D0D0D]">
-                        {profile?.username || user?.email}
-                        <span className="ml-2 text-xs text-[#6B6B6B]">(you)</span>
+                        {isOwner ? (profile?.username || user?.email) : workspace?.name}
+                        {isOwner && <span className="ml-2 text-xs text-[#6B6B6B]">(you)</span>}
                       </p>
-                      <p className="text-xs text-[#6B6B6B]">{user?.email}</p>
+                      {isOwner && <p className="text-xs text-[#6B6B6B]">{user?.email}</p>}
                     </div>
                   </div>
                   <span className="rounded-full bg-[#0D0D0D] px-3 py-0.5 text-xs font-medium text-white">owner</span>
@@ -218,27 +271,50 @@ export default function Team() {
                 {accepted.length === 0 ? (
                   <p className="px-5 py-4 text-sm text-[#6B6B6B]">No members yet. Invite someone below.</p>
                 ) : (
-                  accepted.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar url={m.avatar_url} name={m.username || m.invited_email} size="sm" />
-                        <div>
-                          <p className="text-sm font-medium text-[#0D0D0D]">
-                            {m.username || m.invited_email}
-                          </p>
-                          <p className="text-xs text-[#6B6B6B]">{m.invited_email}</p>
+                  accepted.map((m) => {
+                    const isSelf = m.user_id === user?.id;
+                    return (
+                      <div key={m.id} className="flex items-center justify-between px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar url={m.avatar_url} name={m.username || m.invited_email} size="sm" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-[#0D0D0D]">
+                                {m.username || m.invited_email}
+                                {isSelf && <span className="ml-1 text-xs text-[#6B6B6B]">(you)</span>}
+                              </p>
+                              {m.role === "admin" && (
+                                <span className="rounded-full border border-[#E5E4E0] px-2 py-0.5 text-xs font-medium text-[#6B6B6B]">admin</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-[#6B6B6B]">{m.invited_email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isOwner && (
+                            <button
+                              onClick={() => handleToggleRole(m)}
+                              disabled={togglingRoleId === m.id}
+                              className={btnSubtle}
+                            >
+                              {togglingRoleId === m.id
+                                ? "…"
+                                : m.role === "admin" ? "Remove admin" : "Make admin"}
+                            </button>
+                          )}
+                          {canManage && !isSelf && (
+                            <button
+                              onClick={() => handleRemove(m.id)}
+                              disabled={removingId === m.id}
+                              className={btnSubtleRed}
+                            >
+                              {removingId === m.id ? "Removing…" : "Remove"}
+                            </button>
+                          )}
                         </div>
                       </div>
-                      {workspaceRole === "owner" && (
-                        <button
-                          onClick={() => handleRemove(m.id)}
-                          disabled={removingId === m.id}
-                          className={btnSubtleRed}>
-                          {removingId === m.id ? "Removing…" : "Remove"}
-                        </button>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
@@ -254,11 +330,12 @@ export default function Team() {
                     <p className="text-sm text-[#0D0D0D]">{m.invited_email}</p>
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-[#6B6B6B]">pending</span>
-                      {workspaceRole === "owner" && (
+                      {canManage && (
                         <button
                           onClick={() => handleRemove(m.id)}
                           disabled={removingId === m.id}
-                          className={btnSubtleRed}>
+                          className={btnSubtleRed}
+                        >
                           {removingId === m.id ? "Revoking…" : "Revoke"}
                         </button>
                       )}
@@ -269,8 +346,8 @@ export default function Team() {
             </div>
           )}
 
-          {/* ── Invite form ── */}
-          {workspaceRole === "owner" && (
+          {/* ── Invite form (owner + admin) ── */}
+          {canManage && (
             <div className="mt-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-4">Invite a member</p>
               <form onSubmit={handleInvite} className="flex gap-3">
@@ -299,7 +376,6 @@ export default function Team() {
             <div className="mt-10">
               <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-4">Team Chat</p>
               <div className="rounded-2xl border border-[#E5E4E0] bg-white overflow-hidden">
-                {/* Message list */}
                 <div className="h-72 overflow-y-auto p-4 space-y-4">
                   {chatLoading && messages.length === 0 ? (
                     <div className="space-y-3">
@@ -334,7 +410,6 @@ export default function Team() {
 
                 <div className="border-t border-[#E5E4E0]" />
 
-                {/* Input */}
                 <form onSubmit={handleSend} className="flex gap-2 p-3">
                   <input
                     type="text"

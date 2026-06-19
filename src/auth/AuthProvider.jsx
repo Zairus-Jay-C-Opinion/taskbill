@@ -69,6 +69,7 @@ export function AuthProvider({ children }) {
     workspace: workspace?.workspace ?? null,
     workspaceRole: workspace?.role ?? null,
     workspaceId: workspace?.workspace?.id ?? null,
+    workspaceMemberId: workspace?.memberId ?? null,
     pendingInvites,
     loading,
     refreshProfile: fetchProfile,

@@ -138,7 +138,7 @@ export async function getWorkspace() {
     .eq("user_id", user.id)
     .eq("status", "accepted")
     .maybeSingle();
-  if (membership) return { workspace: membership.workspace, role: "member" };
+  if (membership) return { workspace: membership.workspace, role: membership.role, memberId: membership.id };
 
   return null;
 }
@@ -382,6 +382,22 @@ export async function updateInvoiceStatus(invoiceId, status) {
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function leaveWorkspace(memberId) {
+  const { error } = await supabase
+    .from("workspace_members")
+    .delete()
+    .eq("id", memberId);
+  if (error) throw error;
+}
+
+export async function setMemberRole(memberId, role) {
+  const { error } = await supabase
+    .from("workspace_members")
+    .update({ role })
+    .eq("id", memberId);
+  if (error) throw error;
 }
 
 export async function getChatMessages(workspaceId) {
