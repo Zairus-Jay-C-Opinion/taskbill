@@ -26,6 +26,24 @@ function linkify(text) {
   );
 }
 
+function IconExpand() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+      <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+    </svg>
+  );
+}
+
+function IconCollapse() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+      <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+    </svg>
+  );
+}
+
 export default function TeamChat({ workspaceId }) {
   const { user } = useAuth();
 
@@ -39,20 +57,17 @@ export default function TeamChat({ workspaceId }) {
   const [chatError, setChatError]     = useState("");
   const [expanded, setExpanded]       = useState(false);
 
-  const messagesEndRef = useRef(null);
+  const messagesEndRef  = useRef(null);
   const loadMessagesRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const chatInputRef = useRef(null);
+  const fileInputRef    = useRef(null);
+  const chatInputRef    = useRef(null);
 
-  useEffect(() => {
-    loadMessages();
-  }, [workspaceId]);
+  useEffect(() => { loadMessages(); }, [workspaceId]);
 
   useEffect(() => {
     const channel = supabase
       .channel(`chat-${workspaceId}`)
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", filter: `workspace_id=eq.${workspaceId}` },
         () => { loadMessagesRef.current?.(); }
       )
@@ -72,6 +87,12 @@ export default function TeamChat({ workspaceId }) {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [showEmoji]);
+
+  // Lock body scroll when full-screen
+  useEffect(() => {
+    document.body.style.overflow = expanded ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [expanded]);
 
   async function loadMessages() {
     setChatLoading(true);
@@ -108,8 +129,7 @@ export default function TeamChat({ workspaceId }) {
     if (!input) { setChatInput((p) => p + emoji); return; }
     const start = input.selectionStart ?? chatInput.length;
     const end   = input.selectionEnd   ?? chatInput.length;
-    const next = chatInput.slice(0, start) + emoji + chatInput.slice(end);
-    setChatInput(next);
+    setChatInput(chatInput.slice(0, start) + emoji + chatInput.slice(end));
     requestAnimationFrame(() => {
       input.focus();
       input.setSelectionRange(start + emoji.length, start + emoji.length);
@@ -132,161 +152,173 @@ export default function TeamChat({ workspaceId }) {
     }
   }
 
+  // Shared message list JSX
+  const messageList = (
+    <div className={`overflow-y-auto p-4 space-y-3 ${expanded ? "flex-1" : "h-80"}`}>
+      {chatLoading && messages.length === 0 ? (
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-3/4" />
+          <Skeleton className="h-10 w-1/2" />
+          <Skeleton className="h-10 w-2/3" />
+        </div>
+      ) : messages.length === 0 ? (
+        <p className="text-sm text-[#6B6B6B] text-center pt-10">No messages yet. Say hello to your team!</p>
+      ) : (
+        messages.map((msg) => {
+          const isMine = msg.sender_id === user?.id;
+          return (
+            <div key={msg.id} className={`flex items-end gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}>
+              {!isMine && <Avatar url={msg.avatar_url} name={msg.username || msg.sender_id} size="xs" />}
+              <div className={`max-w-[72%] flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}>
+                {!isMine && (
+                  <span className="text-xs font-semibold text-[#0D0D0D] px-1">{msg.username || "Unknown"}</span>
+                )}
+                <div className={`px-3 py-2 rounded-2xl text-sm break-words ${isMine ? "bg-[#0D0D0D] text-white rounded-br-sm" : "bg-[#F5F4F0] text-[#0D0D0D] rounded-bl-sm"}`}>
+                  {msg.content && <p>{linkify(msg.content)}</p>}
+                  {msg.attachment_type === "image" && (
+                    <img src={msg.attachment_url} alt={msg.attachment_name} className="mt-1.5 max-w-[220px] rounded-xl object-cover" />
+                  )}
+                  {msg.attachment_type === "file" && (
+                    <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"
+                      className={`mt-1.5 flex items-center gap-1.5 text-xs underline opacity-80 hover:opacity-100 ${isMine ? "text-white" : "text-[#0D0D0D]"}`}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      {msg.attachment_name}
+                    </a>
+                  )}
+                </div>
+                <span className="text-xs text-[#6B6B6B] px-1">
+                  {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </div>
+            </div>
+          );
+        })
+      )}
+      <div ref={messagesEndRef} />
+    </div>
+  );
+
+  // Shared input bar JSX
+  const inputBar = (
+    <>
+      {attachment && (
+        <div className="flex items-center gap-2 px-3 pt-2">
+          {attachment.type === "image"
+            ? <img src={attachment.previewUrl} alt={attachment.name} className="h-12 w-12 rounded-lg object-cover border border-[#E5E4E0]" />
+            : (
+              <div className="flex items-center gap-1.5 rounded-lg border border-[#E5E4E0] bg-[#F5F4F0] px-3 py-2 text-xs text-[#0D0D0D]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                {attachment.name}
+              </div>
+            )
+          }
+          <button onClick={() => setAttachment(null)} className="text-xs text-[#6B6B6B] hover:text-red-500 transition-colors">✕ Remove</button>
+        </div>
+      )}
+      {chatError && <p className="px-3 pt-2 text-xs text-red-500">{chatError}</p>}
+      <form onSubmit={handleSend} className="relative flex items-center gap-1 p-3">
+        <div className="relative" data-emoji-picker>
+          <button type="button" onClick={() => setShowEmoji((v) => !v)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B6B6B] hover:bg-[#F5F4F0] transition-colors"
+            title="Emoji">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+              <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3"/>
+              <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3"/>
+            </svg>
+          </button>
+          {showEmoji && (
+            <div className="absolute bottom-12 left-0 z-20 w-72 rounded-2xl border border-[#E5E4E0] bg-white p-3 shadow-lg">
+              <div className="grid grid-cols-10 gap-1">
+                {EMOJIS.map((e) => (
+                  <button key={e} type="button"
+                    onClick={() => { insertEmoji(e); setShowEmoji(false); }}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-base hover:bg-[#F5F4F0] transition-colors">
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B6B6B] hover:bg-[#F5F4F0] transition-colors disabled:opacity-40"
+          title="Attach file or image">
+          {uploading
+            ? <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".25"/><path d="M12 3a9 9 0 019 9"/></svg>
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          }
+        </button>
+
+        <input ref={chatInputRef} type="text" placeholder="Message your team…"
+          value={chatInput} onChange={(e) => setChatInput(e.target.value)}
+          disabled={sending} maxLength={2000}
+          className="flex-1 rounded-xl border border-[#E5E4E0] bg-[#F5F4F0] px-4 py-2 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors"
+        />
+        <button type="submit" disabled={sending || (!chatInput.trim() && !attachment)}
+          className={`${btnPrimary} shrink-0 px-4 py-2`}>
+          {sending ? "…" : "Send"}
+        </button>
+      </form>
+    </>
+  );
+
+  // Full-screen overlay
+  if (expanded) {
+    return (
+      <>
+        {/* Inline placeholder so page doesn't collapse */}
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Team Chat</p>
+          </div>
+          <div className="h-24 rounded-2xl border border-dashed border-[#E5E4E0] flex items-center justify-center">
+            <p className="text-xs text-[#6B6B6B]">Chat is open in full screen</p>
+          </div>
+        </div>
+
+        {/* Full-screen overlay */}
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-[#E5E4E0] px-6 py-4 shrink-0">
+            <p className="text-sm font-semibold text-[#0D0D0D]">Team Chat</p>
+            <button type="button" onClick={() => setExpanded(false)}
+              className="flex items-center gap-1.5 text-xs text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors">
+              <IconCollapse />
+              Exit full screen
+            </button>
+          </div>
+
+          {/* Messages */}
+          {messageList}
+
+          {/* Divider + input */}
+          <div className="border-t border-[#E5E4E0] shrink-0">
+            {inputBar}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Normal inline view
   return (
     <div className="mt-10">
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Team Chat</p>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="flex items-center gap-1 text-xs text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors"
-          title={expanded ? "Collapse" : "Expand"}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            {expanded
-              ? <><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></>
-              : <><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></>
-            }
-          </svg>
-          {expanded ? "Collapse" : "Expand"}
+        <button type="button" onClick={() => setExpanded(true)}
+          className="flex items-center gap-1.5 text-xs text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors">
+          <IconExpand />
+          Full screen
         </button>
       </div>
       <div className="rounded-2xl border border-[#E5E4E0] bg-white overflow-hidden">
-
-        {/* Message list */}
-        <div className={`overflow-y-auto p-4 space-y-3 transition-all duration-300 ${expanded ? "h-[480px]" : "h-80"}`}>
-          {chatLoading && messages.length === 0 ? (
-            <div className="space-y-3">
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-10 w-1/2" />
-              <Skeleton className="h-10 w-2/3" />
-            </div>
-          ) : messages.length === 0 ? (
-            <p className="text-sm text-[#6B6B6B] text-center pt-10">No messages yet. Say hello to your team!</p>
-          ) : (
-            messages.map((msg) => {
-              const isMine = msg.sender_id === user?.id;
-              return (
-                <div key={msg.id} className={`flex items-end gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}>
-                  {!isMine && <Avatar url={msg.avatar_url} name={msg.username || msg.sender_id} size="xs" />}
-                  <div className={`max-w-[72%] flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}>
-                    {!isMine && (
-                      <span className="text-xs font-semibold text-[#0D0D0D] px-1">{msg.username || "Unknown"}</span>
-                    )}
-                    <div className={`px-3 py-2 rounded-2xl text-sm break-words ${isMine ? "bg-[#0D0D0D] text-white rounded-br-sm" : "bg-[#F5F4F0] text-[#0D0D0D] rounded-bl-sm"}`}>
-                      {msg.content && <p>{linkify(msg.content)}</p>}
-                      {msg.attachment_type === "image" && (
-                        <img src={msg.attachment_url} alt={msg.attachment_name} className="mt-1.5 max-w-[220px] rounded-xl object-cover" />
-                      )}
-                      {msg.attachment_type === "file" && (
-                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"
-                          className={`mt-1.5 flex items-center gap-1.5 text-xs underline opacity-80 hover:opacity-100 ${isMine ? "text-white" : "text-[#0D0D0D]"}`}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                          {msg.attachment_name}
-                        </a>
-                      )}
-                    </div>
-                    <span className="text-xs text-[#6B6B6B] px-1">
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
+        {messageList}
         <div className="border-t border-[#E5E4E0]" />
-
-        {/* Attachment preview */}
-        {attachment && (
-          <div className="flex items-center gap-2 px-3 pt-2">
-            {attachment.type === "image"
-              ? <img src={attachment.previewUrl} alt={attachment.name} className="h-12 w-12 rounded-lg object-cover border border-[#E5E4E0]" />
-              : (
-                <div className="flex items-center gap-1.5 rounded-lg border border-[#E5E4E0] bg-[#F5F4F0] px-3 py-2 text-xs text-[#0D0D0D]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  {attachment.name}
-                </div>
-              )
-            }
-            <button onClick={() => setAttachment(null)} className="text-xs text-[#6B6B6B] hover:text-red-500 transition-colors">✕ Remove</button>
-          </div>
-        )}
-
-        {chatError && (
-          <p className="px-3 pt-2 text-xs text-red-500">{chatError}</p>
-        )}
-
-        {/* Input */}
-        <form onSubmit={handleSend} className="relative flex items-center gap-1 p-3">
-          {/* Emoji */}
-          <div className="relative" data-emoji-picker>
-            <button
-              type="button"
-              onClick={() => setShowEmoji((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B6B6B] hover:bg-[#F5F4F0] transition-colors"
-              title="Emoji"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3"/>
-                <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3"/>
-              </svg>
-            </button>
-            {showEmoji && (
-              <div className="absolute bottom-12 left-0 z-20 w-72 rounded-2xl border border-[#E5E4E0] bg-white p-3 shadow-lg">
-                <div className="grid grid-cols-10 gap-1">
-                  {EMOJIS.map((e) => (
-                    <button
-                      key={e} type="button"
-                      onClick={() => { insertEmoji(e); setShowEmoji(false); }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-base hover:bg-[#F5F4F0] transition-colors"
-                    >
-                      {e}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* File */}
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B6B6B] hover:bg-[#F5F4F0] transition-colors disabled:opacity-40"
-            title="Attach file or image"
-          >
-            {uploading ? (
-              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".25"/><path d="M12 3a9 9 0 019 9"/></svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-            )}
-          </button>
-
-          <input
-            ref={chatInputRef}
-            type="text"
-            placeholder="Message your team…"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            disabled={sending}
-            maxLength={2000}
-            className="flex-1 rounded-xl border border-[#E5E4E0] bg-[#F5F4F0] px-4 py-2 text-sm text-[#0D0D0D] outline-none focus:border-[#0D0D0D] placeholder:text-[#6B6B6B] transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={sending || (!chatInput.trim() && !attachment)}
-            className={`${btnPrimary} shrink-0 px-4 py-2`}
-          >
-            {sending ? "…" : "Send"}
-          </button>
-        </form>
+        {inputBar}
       </div>
     </div>
   );

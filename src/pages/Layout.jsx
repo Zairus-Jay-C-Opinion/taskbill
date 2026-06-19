@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { saveCurrency, acceptInvite } from "../lib/db";
@@ -28,6 +28,12 @@ export default function Layout() {
   const [noPlanInviteId, setNoPlanInviteId] = useState(null);
   const [chatUnread, setChatUnread] = useState(0);
 
+  // Refs so Realtime callback always reads current values (avoids stale closure)
+  const pathnameRef = useRef(location.pathname);
+  const userIdRef   = useRef(user?.id);
+  useEffect(() => { pathnameRef.current = location.pathname; }, [location.pathname]);
+  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+
   // Reset unread count when user visits /team
   useEffect(() => {
     if (location.pathname === "/team") setChatUnread(0);
@@ -42,9 +48,9 @@ export default function Layout() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", filter: `workspace_id=eq.${workspaceId}` },
         (payload) => {
-          const isOwnMessage = payload.new?.sender_id === user?.id;
+          const isOwnMessage = payload.new?.sender_id === userIdRef.current;
           if (isOwnMessage) return;
-          if (location.pathname !== "/team") {
+          if (pathnameRef.current !== "/team") {
             setChatUnread((n) => n + 1);
             const notifEnabled = localStorage.getItem("taskbill_chat_notif") === "true";
             if (notifEnabled && Notification.permission === "granted") {
@@ -58,7 +64,7 @@ export default function Layout() {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [workspaceId, user?.id]);
+  }, [workspaceId]);
 
   async function handleAcceptInvite(inviteId) {
     if (!profile?.plan) {

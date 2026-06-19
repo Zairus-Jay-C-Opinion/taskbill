@@ -173,12 +173,12 @@ export default function Profile() {
 
   async function handleNotifToggle() {
     if (!notifEnabled) {
-      if (notifPermission === "default") {
-        const result = await Notification.requestPermission();
-        setNotifPermission(result);
-        if (result !== "granted") return;
+      let permission = notifPermission;
+      if (permission === "default") {
+        permission = await Notification.requestPermission();
+        setNotifPermission(permission);
       }
-      if (notifPermission === "denied") return;
+      if (permission !== "granted") return; // denied or blocked (incognito returns "denied" immediately)
       localStorage.setItem("taskbill_chat_notif", "true");
       setNotifEnabled(true);
     } else {
@@ -363,7 +363,7 @@ export default function Profile() {
             <p className="text-sm font-medium text-[#0D0D0D]">Chat message notifications</p>
             <p className="text-xs text-[#6B6B6B] mt-0.5">
               {notifPermission === "denied"
-                ? "Blocked by your browser. Allow notifications in browser settings to enable."
+                ? "Blocked by your browser or incognito mode. To enable, allow notifications for this site in browser settings (not available in incognito)."
                 : "Show a browser notification when a teammate sends a message while you're on another page."}
             </p>
           </div>
