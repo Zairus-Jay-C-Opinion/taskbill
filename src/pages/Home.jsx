@@ -115,8 +115,9 @@ const PLANS = [
 export default function Home() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const location = useLocation();
-  const aboutRef = useReveal();
-  const plansRef = useReveal();
+  const aboutRef   = useReveal();
+  const compareRef = useReveal();
+  const plansRef   = useReveal();
 
   const [username, setUsername] = useState("");
   const [saving, setSaving] = useState(false);
@@ -263,6 +264,97 @@ export default function Home() {
             No spreadsheets, no manual calculations — just clear records of your work and a fast path to getting paid.
           </p>
           <AboutTabs />
+        </div>
+      </section>
+
+      {/* ── Comparison ── */}
+      <section className="bg-white py-28 px-6 border-t border-[#E5E4E0]">
+        <div ref={compareRef} className="mx-auto max-w-4xl" style={{ opacity: 0, transform: "translateY(24px)" }}>
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Honest comparison</p>
+          <h2 className="mt-3 text-4xl font-bold tracking-tight text-[#0D0D0D]">
+            How TaskBill stacks up.
+          </h2>
+          <p className="mt-4 text-lg text-[#6B6B6B] leading-relaxed">
+            Compared to FreshBooks, Wave, Bonsai, and Invoice Ninja — here's where we lead and where we're still catching up.
+          </p>
+
+          <div className="mt-12 grid grid-cols-1 gap-10 sm:grid-cols-2">
+
+            {/* Where we lead */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#0D0D0D] mb-6">Where TaskBill leads</p>
+              <ul className="space-y-6">
+                {[
+                  {
+                    title: "AI invoice drafting",
+                    note: "TaskBill writes the email for you. FreshBooks, Bonsai, Wave, and Invoice Ninja generate the PDF — the message is still yours to write.",
+                  },
+                  {
+                    title: "Built-in team chat",
+                    note: "No competitor bundles real-time chat. Everyone else pushes you to Slack or email for team communication.",
+                  },
+                  {
+                    title: "Free plan with Stripe payment links",
+                    note: "Wave is free but charges per transaction on their own processor. Invoice Ninja's free tier is self-hosted. TaskBill's free plan includes Stripe links out of the box.",
+                  },
+                  {
+                    title: "Multi-workspace switching",
+                    note: "Switch between client teams in one account. FreshBooks and Bonsai tie each account to a single workspace.",
+                  },
+                  {
+                    title: "Custom branding on invoices",
+                    note: "Logo and brand colour on every invoice. FreshBooks locks this behind their highest plan; Wave charges extra.",
+                  },
+                ].map(({ title, note }) => (
+                  <li key={title} className="flex gap-4">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0D0D0D] text-white text-xs font-bold">✓</span>
+                    <div>
+                      <p className="text-sm font-semibold text-[#0D0D0D]">{title}</p>
+                      <p className="mt-1 text-sm text-[#6B6B6B] leading-relaxed">{note}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Still building */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-6">Still building</p>
+              <ul className="space-y-6">
+                {[
+                  {
+                    title: "Time tracking",
+                    note: "FreshBooks, Bonsai, and Invoice Ninja have a built-in stopwatch. TaskBill tracks tasks by amount, not hours logged.",
+                  },
+                  {
+                    title: "Recurring invoices",
+                    note: "All four competitors auto-send invoices on a schedule. TaskBill requires creating each invoice manually for now.",
+                  },
+                  {
+                    title: "Expense tracking",
+                    note: "FreshBooks and Wave let you log expenses and attach receipts. TaskBill is income-only.",
+                  },
+                  {
+                    title: "Client portal",
+                    note: "FreshBooks and Bonsai give clients their own login to view invoices. TaskBill sends a Stripe payment link instead.",
+                  },
+                  {
+                    title: "Native mobile app",
+                    note: "FreshBooks and Bonsai have iOS/Android apps. TaskBill works as a PWA but no native app yet.",
+                  },
+                ].map(({ title, note }) => (
+                  <li key={title} className="flex gap-4">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#E5E4E0] text-[#6B6B6B] text-xs">○</span>
+                    <div>
+                      <p className="text-sm font-semibold text-[#0D0D0D]">{title}</p>
+                      <p className="mt-1 text-sm text-[#6B6B6B] leading-relaxed">{note}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+          </div>
         </div>
       </section>
 
