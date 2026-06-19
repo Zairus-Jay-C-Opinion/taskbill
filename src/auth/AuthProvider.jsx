@@ -24,13 +24,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   const fetchWorkspaces = useCallback(async () => {
+    const personal = { workspace: { id: "personal", name: "Personal" }, role: "personal", memberId: null };
     try {
       const list = await getWorkspaces();
-      setWorkspaces(list);
+      setWorkspaces([personal, ...list]);
       const invites = await getPendingInvites();
       setPendingInvites(invites);
     } catch {
-      setWorkspaces([]);
+      setWorkspaces([personal]);
     }
   }, []);
 

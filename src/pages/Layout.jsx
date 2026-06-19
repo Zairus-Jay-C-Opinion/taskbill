@@ -56,7 +56,7 @@ export default function Layout() {
 
   // Global chat Realtime listener for unread badge + browser notifications
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!workspaceId || workspaceId === "personal") return;
     const channel = supabase
       .channel(`layout-chat-${workspaceId}`)
       .on(
@@ -124,7 +124,7 @@ export default function Layout() {
                 {label}
               </NavLink>
             ))}
-            {(profile?.plan === "business" || workspace) && (
+            {(profile?.plan === "business" || workspace) && workspaceId !== "personal" && (
               <NavLink to="/team"
                 className={({ isActive }) =>
                   `relative text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
@@ -163,7 +163,7 @@ export default function Layout() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          {workspaces.length > 0 && (
+          {workspaces.length > 1 && (
             <div ref={switcherRef} className="relative">
               <button
                 onClick={() => setSwitcherOpen((o) => !o)}
@@ -190,7 +190,9 @@ export default function Layout() {
                       }`}
                     >
                       <span className="truncate">{entry.workspace.name}</span>
-                      <span className="ml-3 shrink-0 text-xs text-[#6B6B6B]">{entry.role}</span>
+                      {entry.role !== "personal" && (
+                        <span className="ml-3 shrink-0 text-xs text-[#6B6B6B]">{entry.role}</span>
+                      )}
                     </button>
                   ))}
                 </div>

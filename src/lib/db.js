@@ -257,7 +257,8 @@ export async function acceptInvite(memberId) {
 
 export async function getClients(workspaceId = null) {
   let query = supabase.from("clients").select("*").order("name");
-  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  if (workspaceId === "personal") query = query.is("workspace_id", null);
+  else if (workspaceId) query = query.eq("workspace_id", workspaceId);
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -288,7 +289,8 @@ export async function getTasks({ invoiceId = null, workspaceId = null } = {}) {
     query = query.eq("invoice_id", invoiceId);
   }
 
-  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  if (workspaceId === "personal") query = query.is("workspace_id", null);
+  else if (workspaceId) query = query.eq("workspace_id", workspaceId);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -300,7 +302,8 @@ export async function getAllTasks(workspaceId = null) {
     .from("tasks")
     .select("*, client:clients(name)")
     .order("created_at", { ascending: false });
-  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  if (workspaceId === "personal") query = query.is("workspace_id", null);
+  else if (workspaceId) query = query.eq("workspace_id", workspaceId);
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -343,7 +346,8 @@ export async function getInvoices(workspaceId = null) {
       tasks(id, title, amount, due_date)
     `)
     .order("created_at", { ascending: false });
-  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  if (workspaceId === "personal") query = query.is("workspace_id", null);
+  else if (workspaceId) query = query.eq("workspace_id", workspaceId);
   const { data, error } = await query;
   if (error) throw error;
   return data.map((inv) => ({

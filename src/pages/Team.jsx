@@ -15,7 +15,7 @@ const btnSubtleRed = "rounded-lg border border-red-100 bg-white px-3 py-1 text-x
 const btnSubtle = "rounded-lg border border-[#E5E4E0] bg-white px-3 py-1 text-xs font-medium text-[#0D0D0D] hover:bg-[#F5F4F0] disabled:opacity-40 transition-colors";
 
 export default function Team() {
-  const { profile, user, workspace, workspaceRole, workspaceMemberId, refreshWorkspace, workspaces, switchWorkspace } = useAuth();
+  const { profile, user, workspace, workspaceRole, workspaceId, workspaceMemberId, refreshWorkspace, workspaces, switchWorkspace } = useAuth();
 
   const [members, setMembers]         = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -33,10 +33,11 @@ export default function Team() {
   const ownsAnyWorkspace = workspaces.some((e) => e.role === "owner");
 
   useEffect(() => {
+    if (workspaceId === "personal") return;
     if (workspace) loadMembers();
     // Business plan user who doesn't own any workspace yet — create one
     if (profile?.plan === "business" && !ownsAnyWorkspace) init();
-  }, [workspace, profile?.plan, ownsAnyWorkspace]);
+  }, [workspace, workspaceId, profile?.plan, ownsAnyWorkspace]);
 
   async function init() {
     setLoading(true);
@@ -118,7 +119,7 @@ export default function Team() {
     }
   }
 
-  if (profile?.plan !== "business" && !workspaceRole) return <Navigate to="/" replace />;
+  if (workspaceId === "personal" || (profile?.plan !== "business" && !workspaceRole)) return <Navigate to="/" replace />;
 
   const accepted = members.filter((m) => m.status === "accepted");
   const pending  = members.filter((m) => m.status === "pending");
