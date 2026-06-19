@@ -425,12 +425,32 @@ export async function getChatMessages(workspaceId) {
   }));
 }
 
-export async function sendChatMessage(workspaceId, senderId, content) {
+export async function uploadChatFile(file, workspaceId) {
+  const ext = file.name.split(".").pop();
+  const path = `${workspaceId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from("chat-attachments").upload(path, file);
+  if (error) throw error;
+  const { data } = supabase.storage.from("chat-attachments").getPublicUrl(path);
+  const isImage = file.type.startsWith("image/");
+  return { url: data.publicUrl, name: file.name, type: isImage ? "image" : "file" };
+}
+
+export async function sendChatMessage(workspaceId, senderId, content, attachment = null) {
   const trimmed = content.trim();
-  if (!trimmed) throw new Error("Message cannot be empty");
+  if (!trimmed && !attachment) throw new Error("Message cannot be empty");
+  const row = {
+    workspace_id: workspaceId,
+    sender_id: senderId,
+    content: trimmed || "",
+    ...(attachment && {
+      attachment_url: attachment.url,
+      attachment_name: attachment.name,
+      attachment_type: attachment.type,
+    }),
+  };
   const { data, error } = await supabase
     .from("chat_messages")
-    .insert({ workspace_id: workspaceId, sender_id: senderId, content: trimmed })
+    .insert(row)
     .select()
     .single();
   if (error) throw error;
