@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { saveCurrency, acceptInvite } from "../lib/db";
 import { CURRENCIES, currencySymbol } from "../lib/currency";
+import { supabase } from "../lib/supabaseClient";
 import Avatar from "../components/Avatar";
 
 const APP_NAV = [
@@ -18,11 +19,46 @@ const INFO_NAV = [
 ];
 
 export default function Layout() {
-  const { profile, user, signOut, refreshProfile, pendingInvites, refreshWorkspace, workspace, workspaceRole } = useAuth();
+  const { profile, user, signOut, refreshProfile, pendingInvites, refreshWorkspace, workspace, workspaceRole, workspaceId } = useAuth();
   const displayName = profile?.username || user?.email?.split("@")[0] || "";
   const currentCurrency = profile?.currency ?? "PHP";
+  const location = useLocation();
+
   const [acceptingId, setAcceptingId] = useState(null);
   const [noPlanInviteId, setNoPlanInviteId] = useState(null);
+  const [chatUnread, setChatUnread] = useState(0);
+
+  // Reset unread count when user visits /team
+  useEffect(() => {
+    if (location.pathname === "/team") setChatUnread(0);
+  }, [location.pathname]);
+
+  // Global chat Realtime listener for unread badge + browser notifications
+  useEffect(() => {
+    if (!workspaceId) return;
+    const channel = supabase
+      .channel(`layout-chat-${workspaceId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages", filter: `workspace_id=eq.${workspaceId}` },
+        (payload) => {
+          const isOwnMessage = payload.new?.sender_id === user?.id;
+          if (isOwnMessage) return;
+          if (location.pathname !== "/team") {
+            setChatUnread((n) => n + 1);
+            const notifEnabled = localStorage.getItem("taskbill_chat_notif") === "true";
+            if (notifEnabled && Notification.permission === "granted") {
+              new Notification("New team message", {
+                body: payload.new?.content?.slice(0, 100) || "New attachment",
+                icon: "/logo.png",
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [workspaceId, user?.id]);
 
   async function handleAcceptInvite(inviteId) {
     if (!profile?.plan) {
@@ -47,7 +83,7 @@ export default function Layout() {
       await saveCurrency(user.id, currency);
       await refreshProfile();
     } catch {
-      // silent — UI will stay on old value until next refresh
+      // silent
     }
   }
 
@@ -68,9 +104,14 @@ export default function Layout() {
             {(profile?.plan === "business" || workspace) && (
               <NavLink to="/team"
                 className={({ isActive }) =>
-                  `text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
+                  `relative text-sm transition-colors ${isActive ? "font-semibold text-[#0D0D0D]" : "text-[#6B6B6B] hover:text-[#0D0D0D]"}`
                 }>
                 Team
+                {chatUnread > 0 && (
+                  <span className="absolute -top-1.5 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white leading-none">
+                    {chatUnread > 9 ? "9+" : chatUnread}
+                  </span>
+                )}
               </NavLink>
             )}
             {profile?.plan === "business" && workspaceRole === "owner" && (

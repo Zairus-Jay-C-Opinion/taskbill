@@ -29,14 +29,15 @@ function linkify(text) {
 export default function TeamChat({ workspaceId }) {
   const { user } = useAuth();
 
-  const [messages, setMessages]     = useState([]);
+  const [messages, setMessages]       = useState([]);
   const [chatLoading, setChatLoading] = useState(true);
-  const [chatInput, setChatInput]   = useState("");
-  const [sending, setSending]       = useState(false);
-  const [showEmoji, setShowEmoji]   = useState(false);
-  const [attachment, setAttachment] = useState(null);
-  const [uploading, setUploading]   = useState(false);
-  const [chatError, setChatError]   = useState("");
+  const [chatInput, setChatInput]     = useState("");
+  const [sending, setSending]         = useState(false);
+  const [showEmoji, setShowEmoji]     = useState(false);
+  const [attachment, setAttachment]   = useState(null);
+  const [uploading, setUploading]     = useState(false);
+  const [chatError, setChatError]     = useState("");
+  const [expanded, setExpanded]       = useState(false);
 
   const messagesEndRef = useRef(null);
   const loadMessagesRef = useRef(null);
@@ -133,11 +134,27 @@ export default function TeamChat({ workspaceId }) {
 
   return (
     <div className="mt-10">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B] mb-4">Team Chat</p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#6B6B6B]">Team Chat</p>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-center gap-1 text-xs text-[#6B6B6B] hover:text-[#0D0D0D] transition-colors"
+          title={expanded ? "Collapse" : "Expand"}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {expanded
+              ? <><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></>
+              : <><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></>
+            }
+          </svg>
+          {expanded ? "Collapse" : "Expand"}
+        </button>
+      </div>
       <div className="rounded-2xl border border-[#E5E4E0] bg-white overflow-hidden">
 
         {/* Message list */}
-        <div className="h-80 overflow-y-auto p-4 space-y-3">
+        <div className={`overflow-y-auto p-4 space-y-3 transition-all duration-300 ${expanded ? "h-[480px]" : "h-80"}`}>
           {chatLoading && messages.length === 0 ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-3/4" />
@@ -209,10 +226,15 @@ export default function TeamChat({ workspaceId }) {
             <button
               type="button"
               onClick={() => setShowEmoji((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B6B6B] hover:bg-[#F5F4F0] transition-colors text-lg"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6B6B6B] hover:bg-[#F5F4F0] transition-colors"
               title="Emoji"
             >
-              😊
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3"/>
+                <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3"/>
+              </svg>
             </button>
             {showEmoji && (
               <div className="absolute bottom-12 left-0 z-20 w-72 rounded-2xl border border-[#E5E4E0] bg-white p-3 shadow-lg">

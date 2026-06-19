@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { supabase } from "../lib/supabaseClient";
@@ -50,6 +50,14 @@ export default function Profile() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  // ── Notifications
+  const [notifEnabled, setNotifEnabled] = useState(
+    () => localStorage.getItem("taskbill_chat_notif") === "true"
+  );
+  const [notifPermission, setNotifPermission] = useState(
+    () => (typeof Notification !== "undefined" ? Notification.permission : "default")
+  );
 
   // ── Delete account
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -160,6 +168,22 @@ export default function Profile() {
     } catch (err) {
       setDeleteError(err.message);
       setDeleting(false);
+    }
+  }
+
+  async function handleNotifToggle() {
+    if (!notifEnabled) {
+      if (notifPermission === "default") {
+        const result = await Notification.requestPermission();
+        setNotifPermission(result);
+        if (result !== "granted") return;
+      }
+      if (notifPermission === "denied") return;
+      localStorage.setItem("taskbill_chat_notif", "true");
+      setNotifEnabled(true);
+    } else {
+      localStorage.setItem("taskbill_chat_notif", "false");
+      setNotifEnabled(false);
     }
   }
 
@@ -330,6 +354,30 @@ export default function Profile() {
             {passwordMsg && <p className="text-sm text-emerald-600">{passwordMsg}</p>}
           </div>
         </form>
+      </Section>
+
+      {/* ── Notifications ── */}
+      <Section title="Notifications">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-[#0D0D0D]">Chat message notifications</p>
+            <p className="text-xs text-[#6B6B6B] mt-0.5">
+              {notifPermission === "denied"
+                ? "Blocked by your browser. Allow notifications in browser settings to enable."
+                : "Show a browser notification when a teammate sends a message while you're on another page."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleNotifToggle}
+            disabled={notifPermission === "denied"}
+            className={`relative shrink-0 ml-4 h-6 w-11 rounded-full transition-colors duration-200 disabled:opacity-40 ${notifEnabled ? "bg-[#0D0D0D]" : "bg-[#E5E4E0]"}`}
+            aria-checked={notifEnabled}
+            role="switch"
+          >
+            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${notifEnabled ? "translate-x-5" : "translate-x-0"}`} />
+          </button>
+        </div>
       </Section>
 
       {/* ── Danger zone ── */}
